@@ -71,6 +71,14 @@ public class ThirdPersonController : MonoBehaviour
     [Tooltip("How far her hurt cry can be heard by zombies.")]
     public float hurtNoiseRadius = 12f;
 
+    [Header("Ladder Climb")]
+    [Tooltip("Meters per second along ladder_7, ladder_8, and ladder_9.")]
+    public float climbSpeed = 1.35f;
+    [Tooltip("How far in front of the steps she can be and still grab with W. Raise this if she has to stand on the ladder. Lower it if she grabs too early.")]
+    public float climbFrontReach = 0.85f;
+    [Tooltip("How far left or right of the middle of the steps still counts. The side rails are outside this. Lower it if the sides still grab her.")]
+    public float climbStepHalfWidth = 0.4f;
+
     CharacterController controller;
     PlayerHealth health;
     Animator animator;
@@ -105,6 +113,16 @@ public class ThirdPersonController : MonoBehaviour
     static readonly int JumpHash = Animator.StringToHash("Jump");
     static readonly int HitHash = Animator.StringToHash("Hit");
     static readonly int DieHash = Animator.StringToHash("Die");
+    static readonly int ClimbHash = Animator.StringToHash("Climb");
+    static readonly int ClimbSpeedHash = Animator.StringToHash("ClimbSpeed");
+
+    bool isClimbing;
+    Vector3 climbOrigin;
+    Vector3 climbAxis;
+    Vector3 climbFaceDir;
+    float climbLength;
+    float climbProgress;
+    float climbStandDistance;
 
     void Start()
     {
@@ -170,6 +188,8 @@ public class ThirdPersonController : MonoBehaviour
         if (hurtNoiseRadius > 0f)
             NoiseEvents.Emit(transform.position, hurtNoiseRadius);
 
+        ExitClimb();
+
         if (animator != null)
         {
             animator.ResetTrigger(HitHash);
@@ -182,6 +202,7 @@ public class ThirdPersonController : MonoBehaviour
         if (isDead)
             return;
         isDead = true;
+        ExitClimb();
         if (animator != null)
             animator.SetTrigger(DieHash);
     }
@@ -200,6 +221,7 @@ public class ThirdPersonController : MonoBehaviour
         jumpBufferUntil = 0f;
         verticalVelocity = groundedStick;
         currentSpeed = 0f;
+        ExitClimb();
 
         if (controller != null)
             controller.enabled = false;
@@ -248,6 +270,9 @@ public class ThirdPersonController : MonoBehaviour
         bool isSprinting = !isSneaking && sprintAction != null && sprintAction.IsPressed();
         bool isHitLocked = Time.time < hitUntil;
         bool grounded = controller.isGrounded;
+
+        if (!isHitLocked && UpdateLadderClimb(input, grounded))
+            return;
 
         if (jumpAction != null && jumpAction.WasPressedThisFrame() && !isHitLocked)
             jumpBufferUntil = Time.time + jumpBufferTime;
@@ -390,5 +415,211 @@ public class ThirdPersonController : MonoBehaviour
 
         if (audioSource != null)
             audioSource.PlayOneShot(sneakFootstepClip, 0.35f);
+    }
+
+    bool UpdateLadderClimb(Vector2 input, bool grounded)
+    {
+        if (!isClimbing)
+        {
+            if (!grounded || input.y < 0.5f || !TryMountLadder())
+                return false;
+        }
+
+        if (jumpAction != null && jumpAction.WasPressedThisFrame())
+        {
+            ExitClimb();
+            verticalVelocity = 0f;
+            return true;
+        }
+
+        float axis = input.y;
+        if (axis > 0.15f && climbProgress >= climbLength - 0.15f)
+        {
+            DismountLadderTop();
+            return true;
+        }
+
+        if (axis < -0.15f && climbProgress <= 0.08f)
+        {
+            ExitClimb();
+            verticalVelocity = groundedStick;
+            return true;
+        }
+
+        if (Mathf.Abs(axis) < 0.15f)
+            axis = 0f;
+        else
+            axis = Mathf.Sign(axis);
+
+        climbProgress = Mathf.Clamp(climbProgress + axis * climbSpeed * Time.deltaTime, 0f, climbLength);
+        Vector3 stand = climbOrigin + climbAxis * climbProgress + climbFaceDir * climbStandDistance;
+        controller.Move(stand - transform.position);
+
+        if (climbFaceDir.sqrMagnitude > 0.0001f)
+        {
+            Quaternion face = Quaternion.LookRotation(-climbFaceDir, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, face, 1f - Mathf.Exp(-12f * Time.deltaTime));
+        }
+
+        verticalVelocity = 0f;
+        currentSpeed = 0f;
+        if (animator != null)
+        {
+            animator.SetBool(ClimbHash, true);
+            animator.SetBool(SneakHash, false);
+            animator.SetFloat(SpeedHash, 0f);
+            animator.SetFloat(ClimbSpeedHash, axis);
+        }
+
+        return true;
+    }
+
+    static Vector3 LadderFront(Collider col)
+    {
+        Vector3 front = -col.transform.up;
+        front.y = 0f;
+        if (front.sqrMagnitude < 0.0001f)
+            front = Vector3.forward;
+        return front.normalized;
+    }
+
+    static bool IsShipLadder(Collider col)
+    {
+        if (col == null)
+            return false;
+
+        string name = col.name;
+        return name == "ladder_7" || name == "ladder_8" || name == "ladder_9";
+    }
+
+    bool TryMountLadder()
+    {
+        Vector3 origin = transform.position + Vector3.up * controller.center.y;
+        Collider[] hits = Physics.OverlapSphere(origin, 0.75f, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        Collider best = null;
+        float bestDistance = climbFrontReach;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i];
+            if (!IsShipLadder(col) || col.transform.IsChildOf(transform))
+                continue;
+
+            Vector3 front = LadderFront(col);
+            Vector3 right = Vector3.Cross(Vector3.up, front);
+            Vector3 fromCenter = origin - col.bounds.center;
+            float inFront = Vector3.Dot(fromCenter, front);
+            float lateral = Vector3.Dot(fromCenter, right);
+            if (inFront < 0.05f || inFront > climbFrontReach)
+                continue;
+            if (Mathf.Abs(lateral) > climbStepHalfWidth)
+                continue;
+            if (Vector3.Dot(transform.forward, -front) < 0.35f)
+                continue;
+
+            if (inFront < bestDistance)
+            {
+                best = col;
+                bestDistance = inFront;
+            }
+        }
+
+        if (best == null || !BuildLongLadder(best))
+            return false;
+
+        float along = Mathf.Clamp(Vector3.Dot(transform.position - climbOrigin, climbAxis), 0f, climbLength);
+        if (along > climbLength - 0.7f)
+            return false;
+
+        climbFaceDir = LadderFront(best);
+        climbStandDistance = controller.radius + 0.22f;
+        climbProgress = along;
+        isClimbing = true;
+        verticalVelocity = 0f;
+        jumpPending = false;
+        jumpAirborne = false;
+        return true;
+    }
+
+    bool BuildLongLadder(Collider seed)
+    {
+        Vector3 axis = seed.transform.forward;
+        if (Vector3.Dot(axis, Vector3.up) < 0f)
+            axis = -axis;
+        if (axis.sqrMagnitude < 0.0001f)
+            return false;
+        axis.Normalize();
+
+        Collider[] near = Physics.OverlapSphere(seed.bounds.center, 8f, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        Vector3 sample = seed.bounds.center;
+        bool any = false;
+        float minT = 0f;
+        float maxT = 0f;
+
+        for (int i = 0; i < near.Length; i++)
+        {
+            Collider col = near[i];
+            if (!IsShipLadder(col))
+                continue;
+
+            BoxCollider box = col as BoxCollider;
+            Vector3 center = box != null ? col.transform.TransformPoint(box.center) : col.bounds.center;
+            Vector3 halfAlong = box != null
+                ? col.transform.TransformVector(new Vector3(0f, 0f, box.size.z * 0.5f))
+                : axis * 1.23f;
+            float start = Vector3.Dot(center - halfAlong - sample, axis);
+            float end = Vector3.Dot(center + halfAlong - sample, axis);
+            float low = Mathf.Min(start, end);
+            float high = Mathf.Max(start, end);
+
+            if (!any)
+            {
+                minT = low;
+                maxT = high;
+                any = true;
+            }
+            else
+            {
+                minT = Mathf.Min(minT, low);
+                maxT = Mathf.Max(maxT, high);
+            }
+        }
+
+        if (!any || maxT - minT < 0.5f)
+            return false;
+
+        climbOrigin = sample + axis * minT;
+        climbAxis = axis;
+        climbLength = maxT - minT;
+        return true;
+    }
+
+    void DismountLadderTop()
+    {
+        Vector3 land = climbOrigin + climbAxis * (climbLength + 0.55f) + climbFaceDir * 0.35f;
+        land.y += 0.08f;
+
+        ExitClimb();
+        controller.enabled = false;
+        transform.position = land;
+        controller.enabled = true;
+        verticalVelocity = groundedStick;
+    }
+
+    void ExitClimb()
+    {
+        if (!isClimbing)
+        {
+            if (animator != null)
+                animator.SetBool(ClimbHash, false);
+            return;
+        }
+
+        isClimbing = false;
+        if (animator != null)
+        {
+            animator.SetBool(ClimbHash, false);
+            animator.SetFloat(ClimbSpeedHash, 0f);
+        }
     }
 }
