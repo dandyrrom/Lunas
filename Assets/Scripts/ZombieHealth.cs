@@ -51,6 +51,7 @@ public class ZombieHealth : MonoBehaviour
         }
 
         GetComponent<ZombieRoam>()?.ReactToBawangHit();
+        GetComponent<ZombieWaterHunter>()?.ReactToBawangHit();
     }
 
     /// <summary>
@@ -68,6 +69,7 @@ public class ZombieHealth : MonoBehaviour
 
         ZombieRoam roam = GetComponent<ZombieRoam>();
         roam?.BeginCandleBurn();
+        GetComponent<ZombieWaterHunter>()?.BeginCandleBurn();
 
         StartCoroutine(CandleFireDeathRoutine(roam));
     }
@@ -94,7 +96,10 @@ public class ZombieHealth : MonoBehaviour
 
     IEnumerator CandleFireDeathRoutine(ZombieRoam roam)
     {
-        float total = roam != null ? roam.candleFireScreamHoldDuration : 3.5f;
+        ZombieWaterHunter hunter = GetComponent<ZombieWaterHunter>();
+        float total = roam != null
+            ? roam.candleFireScreamHoldDuration
+            : hunter != null ? hunter.candleFireHoldDuration : 3.5f;
         total = Mathf.Max(0.1f, total);
         float fade = Mathf.Clamp(fireFadeDuration, 0.05f, total * 0.85f);
         float hold = Mathf.Max(0f, total - fade);
@@ -181,7 +186,7 @@ public class ZombieHealth : MonoBehaviour
             anim = GetComponentInChildren<Animator>();
 
         // Fire Die while still in Scream + OnFire so Scream→Death blends smoothly.
-        if (anim != null)
+        if (anim != null && HasTrigger(anim, DieHash))
         {
             anim.ResetTrigger(DieHash);
             anim.SetTrigger(DieHash);
@@ -189,6 +194,8 @@ public class ZombieHealth : MonoBehaviour
 
         if (roam != null)
             roam.StopForDeath();
+
+        GetComponent<ZombieWaterHunter>()?.StopForDeath();
 
         UnityEngine.AI.NavMeshAgent agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         if (agent != null)
@@ -198,5 +205,16 @@ public class ZombieHealth : MonoBehaviour
         score?.RegisterKill();
 
         Destroy(gameObject, deathDestroyDelay);
+    }
+
+    static bool HasTrigger(Animator anim, int hash)
+    {
+        foreach (AnimatorControllerParameter parameter in anim.parameters)
+        {
+            if (parameter.nameHash == hash && parameter.type == AnimatorControllerParameterType.Trigger)
+                return true;
+        }
+
+        return false;
     }
 }

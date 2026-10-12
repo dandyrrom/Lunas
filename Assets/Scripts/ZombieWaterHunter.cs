@@ -27,10 +27,14 @@ public class ZombieWaterHunter : MonoBehaviour
     [Tooltip("NavMesh speed while chasing. Above 0.25 plays the run clip.")]
     public float chaseSpeed = 0.8f;
 
+    [Header("Candle")]
+    [Tooltip("Seconds to hold still after a candle hit before the death anim.")]
+    public float candleFireHoldDuration = 3.5f;
+
     [Header("Attack")]
-    public float attackRange = 0.5f;
-    public float attackReachPadding = 0.5f;
-    public int attackDamage = 5;
+    public float attackRange = 0.8f;
+    public float attackReachPadding = 0.8f;
+    public int attackDamage = 10;
     public float attackDuration = 1.8f;
     [Range(0.1f, 0.9f)]
     public float attackHitNormalized = 0.45f;
@@ -56,6 +60,8 @@ public class ZombieWaterHunter : MonoBehaviour
     bool deathAudioPlayed;
 
     bool onLand;
+    bool stoppedForDeath;
+    bool candleBurning;
     bool isChasing;
     bool isAttacking;
     bool hasDestination;
@@ -77,8 +83,8 @@ public class ZombieWaterHunter : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        zombieHealth = GetComponent<ZombieHealth>();
         agent.enabled = false;
+        EnsureHittable();
 
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
@@ -108,11 +114,34 @@ public class ZombieWaterHunter : MonoBehaviour
         idleUntil = Time.time + Random.Range(minIdleTime, maxIdleTime);
     }
 
+    void EnsureHittable()
+    {
+        zombieHealth = GetComponent<ZombieHealth>();
+        if (zombieHealth == null)
+            zombieHealth = gameObject.AddComponent<ZombieHealth>();
+
+        CapsuleCollider capsule = GetComponent<CapsuleCollider>();
+        if (capsule == null)
+            capsule = gameObject.AddComponent<CapsuleCollider>();
+
+        capsule.isTrigger = false;
+        capsule.radius = 0.25f;
+        capsule.height = 2f;
+        capsule.center = new Vector3(0f, 1f, 0f);
+        capsule.direction = 1;
+    }
+
     void Update()
     {
+        if (stoppedForDeath)
+            return;
+
+        if (candleBurning)
+            return;
+
         if (zombieHealth != null && zombieHealth.IsDead)
         {
-            PlayDeathAudio();
+            StopForDeath();
             return;
         }
 
@@ -162,9 +191,9 @@ public class ZombieWaterHunter : MonoBehaviour
         agent.isStopped = false;
         agent.updatePosition = true;
         agent.updateRotation = true;
-        agent.speed = roamSpeed;
+        agent.speed = chaseSpeed;
         onLand = true;
-        PlayRoamAudio();
+        BeginChase();
     }
 
     void UpdateRoam()
@@ -217,8 +246,8 @@ public class ZombieWaterHunter : MonoBehaviour
 
     void UpdateChase()
     {
-        if (CanSeePlayer())
-            RememberPlayer();
+        if (player == null)
+            return;
 
         if (IsPlayerInAttackRange())
         {
@@ -226,13 +255,8 @@ public class ZombieWaterHunter : MonoBehaviour
             return;
         }
 
+        RememberPlayer();
         SetChaseDestination();
-
-        if (agent.pathPending)
-            return;
-
-        if (!CanSeePlayer() && agent.remainingDistance <= agent.stoppingDistance + 0.2f)
-            EndChase();
     }
 
     void EndChase()
@@ -340,11 +364,60 @@ public class ZombieWaterHunter : MonoBehaviour
         agent.updatePosition = true;
         agent.updateRotation = true;
         agent.isStopped = false;
+        BeginChase();
+    }
 
-        if (CanSeePlayer())
-            BeginChase();
-        else
-            EndChase();
+    public void ReactToBawangHit()
+    {
+        if (stoppedForDeath || candleBurning || !onLand || isAttacking)
+            return;
+
+        BeginChase();
+    }
+
+    public void BeginCandleBurn()
+    {
+        candleBurning = true;
+        isAttacking = false;
+        isChasing = false;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+        }
+
+        if (animator != null)
+            animator.SetFloat(SpeedHash, 0f);
+
+        StopRoamAudio();
+        StopRunAudio();
+        StopAttackAudio();
+    }
+
+    public void StopForDeath()
+    {
+        if (stoppedForDeath)
+            return;
+
+        stoppedForDeath = true;
+        candleBurning = false;
+        isAttacking = false;
+        isChasing = false;
+
+        if (agent != null && agent.enabled)
+        {
+            agent.isStopped = true;
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
+            agent.enabled = false;
+        }
+
+        if (animator != null)
+            animator.SetFloat(SpeedHash, 0f);
+
+        PlayDeathAudio();
     }
 
     bool CanSeePlayer()
