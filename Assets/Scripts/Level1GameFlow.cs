@@ -44,7 +44,7 @@ public class Level1GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Scene loaded after SPACE on the end / game-over panel.")]
-    public string continueSceneName = "SplashScreen";
+    public string continueSceneName = "Level2";
 
     [Header("Krus Marker")]
     public Vector3 krusTriggerSize = new Vector3(2.5f, 3f, 2.5f);

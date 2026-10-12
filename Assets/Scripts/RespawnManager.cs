@@ -69,13 +69,22 @@ public class RespawnManager : MonoBehaviour
 
         if (!canRespawn)
         {
-            Level1GameFlow flow = Level1GameFlow.Instance != null
+            Level1GameFlow level1 = Level1GameFlow.Instance != null
                 ? Level1GameFlow.Instance
                 : FindFirstObjectByType<Level1GameFlow>();
-
-            if (flow != null)
+            if (level1 != null)
             {
-                flow.NotifyGameOver();
+                level1.NotifyGameOver();
+                handlingDeath = false;
+                yield break;
+            }
+
+            Level2GameFlow level2 = Level2GameFlow.Instance != null
+                ? Level2GameFlow.Instance
+                : FindFirstObjectByType<Level2GameFlow>();
+            if (level2 != null)
+            {
+                level2.NotifyGameOver();
                 handlingDeath = false;
                 yield break;
             }

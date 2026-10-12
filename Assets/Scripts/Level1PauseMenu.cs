@@ -111,8 +111,7 @@ public class Level1PauseMenu : MonoBehaviour
     void Update()
     {
         // End / game-over panel owns the screen — force-close pause if it opened.
-        Level1GameFlow flow = Level1GameFlow.Instance;
-        if (flow != null && flow.IsPanelOpen)
+        if (IsLevelEndPanelOpen())
         {
             if (paused)
                 ForceCloseWithoutClick();
@@ -157,11 +156,20 @@ public class Level1PauseMenu : MonoBehaviour
         if (paused)
             return false;
 
-        Level1GameFlow flow = Level1GameFlow.Instance;
-        if (flow != null && flow.IsPanelOpen)
+        if (IsLevelEndPanelOpen())
             return false;
 
         return true;
+    }
+
+    static bool IsLevelEndPanelOpen()
+    {
+        Level1GameFlow level1 = Level1GameFlow.Instance;
+        if (level1 != null && level1.IsPanelOpen)
+            return true;
+
+        Level2GameFlow level2 = Level2GameFlow.Instance;
+        return level2 != null && level2.IsPanelOpen;
     }
 
     static bool CursorLeftGameWindow()
