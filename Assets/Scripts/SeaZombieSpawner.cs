@@ -20,9 +20,52 @@ public class SeaZombieSpawner : MonoBehaviour
     [Tooltip("The shortest wait. Spawning never gets faster than this.")]
     public float minimumInterval = 6f;
 
+    [Header("Clear")]
+    [Tooltip("Spawning stops after this many zombie deaths. Anyone still alive catches fire.")]
+    public int killsToStop = 20;
+    public GameObject clearFireVfx;
+
+    int kills;
+    bool cleared;
+
+    void OnEnable()
+    {
+        ZombieHealth.OnDied += HandleZombieDied;
+    }
+
+    void OnDisable()
+    {
+        ZombieHealth.OnDied -= HandleZombieDied;
+    }
+
     void Start()
     {
         StartCoroutine(SpawnLoop());
+    }
+
+    void HandleZombieDied()
+    {
+        if (cleared)
+            return;
+
+        kills++;
+        if (kills >= killsToStop)
+            StopAndBurnTheRest();
+    }
+
+    void StopAndBurnTheRest()
+    {
+        cleared = true;
+        StopAllCoroutines();
+
+        ZombieHealth[] zombies = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None);
+        foreach (ZombieHealth zombie in zombies)
+        {
+            if (zombie == null || zombie.IsDead)
+                continue;
+
+            zombie.KillByCandleFire(clearFireVfx);
+        }
     }
 
     IEnumerator SpawnLoop()
@@ -36,7 +79,7 @@ public class SeaZombieSpawner : MonoBehaviour
         int index = 0;
         float interval = Mathf.Max(minimumInterval, firstInterval);
 
-        while (true)
+        while (!cleared)
         {
             Transform marker = spawnPoints[index % spawnPoints.Length];
             index++;

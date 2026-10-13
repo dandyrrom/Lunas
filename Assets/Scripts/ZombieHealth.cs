@@ -26,6 +26,8 @@ public class ZombieHealth : MonoBehaviour
     public int CurrentHealth => currentHealth;
     public bool IsDead => currentHealth <= 0;
 
+    public static event System.Action OnDied;
+
     static readonly int DieHash = Animator.StringToHash("Die");
 
     void Awake()
@@ -203,6 +205,8 @@ public class ZombieHealth : MonoBehaviour
 
         ZombieKillScore score = FindFirstObjectByType<ZombieKillScore>();
         score?.RegisterKill();
+
+        OnDied?.Invoke();
 
         Destroy(gameObject, deathDestroyDelay);
     }
