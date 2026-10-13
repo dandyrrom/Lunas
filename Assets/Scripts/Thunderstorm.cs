@@ -33,6 +33,11 @@ public class Thunderstorm : MonoBehaviour
     [Min(0.1f)]
     public float maxGap = 8f;
 
+    [Header("Thunder")]
+    public AudioClip thunderClip;
+    [Range(0f, 1f)]
+    public float thunderVolume = 1f;
+
     Light sun;
     Material skyCopy;
     Material originalSky;
@@ -45,6 +50,7 @@ public class Thunderstorm : MonoBehaviour
     float nextFlashTime;
     float phaseStart;
     Phase phase = Phase.Waiting;
+    AudioSource thunderSource;
 
     enum Phase
     {
@@ -69,6 +75,15 @@ public class Thunderstorm : MonoBehaviour
 
         if (sun != null)
             baseSunIntensity = sun.intensity;
+
+        thunderSource = GetComponent<AudioSource>();
+        if (thunderSource == null)
+            thunderSource = gameObject.AddComponent<AudioSource>();
+
+        thunderSource.playOnAwake = false;
+        thunderSource.loop = false;
+        thunderSource.spatialBlend = 0f;
+        thunderSource.volume = thunderVolume;
 
         baseAmbientIntensity = RenderSettings.ambientIntensity;
 
@@ -99,6 +114,7 @@ public class Thunderstorm : MonoBehaviour
                 phase = Phase.Holding;
                 phaseStart = Time.time;
                 level = flashLevel;
+                PlayThunder();
             }
         }
         else if (phase == Phase.Holding)
@@ -148,6 +164,16 @@ public class Thunderstorm : MonoBehaviour
     void ScheduleNextFlash()
     {
         nextFlashTime = Time.time + Random.Range(minGap, maxGap);
+    }
+
+    void PlayThunder()
+    {
+        if (thunderClip == null || thunderSource == null)
+            return;
+
+        thunderSource.volume = thunderVolume;
+        thunderSource.clip = thunderClip;
+        thunderSource.Play();
     }
 
     void Apply(float brightness)

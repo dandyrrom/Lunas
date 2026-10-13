@@ -27762,8 +27762,10 @@ MonoBehaviour:
   flashLevel: 1.4
   brightHold: 0.5
   fadeBack: 0.4
-  minGap: 3
-  maxGap: 8
+  minGap: 6
+  maxGap: 16
+  thunderClip: {fileID: 8300000, guid: f71767e884bdf524d8400d3223d5ca53, type: 3}
+  thunderVolume: 1
 --- !u!4 &1612274392 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 55fecf1063fe8474493f4866aaadffbf, type: 3}
