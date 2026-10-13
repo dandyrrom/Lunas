@@ -35538,7 +35538,7 @@ MonoBehaviour:
   perfectScore: 200
   missedThrowPenalty: 10
   lifeLostPenalty: 25
-  continueSceneName: SplashScreen
+  continueSceneName: Level2
   krusTriggerSize: {x: 2.5, y: 3, z: 2.5}
   killScore: {fileID: 769359838}
   lives: {fileID: 1675826768}
@@ -73427,7 +73427,7 @@ MonoBehaviour:
   m_OverrideVoxelSize: 1
   m_VoxelSize: 0.022
   m_MinRegionArea: 5
-  m_NavMeshData: {fileID: 23800000, guid: aa8dd308f155da64f88a37e4d344a527, type: 2}
+  m_NavMeshData: {fileID: 23800000, guid: fc33aa3666fe0774b831d854deb4ed31, type: 2}
   m_BuildHeightMesh: 1
 --- !u!4 &1705347928
 Transform:
@@ -89564,8 +89564,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2109876543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000014901161, y: 0.000000059604645, z: -0.000000029802322, w: -1}
-  m_LocalPosition: {x: 9.648415, y: 4.0640097, z: -107.58038}
+  m_LocalRotation: {x: 0.000000022351742, y: -0.000000029802322, z: 0.000000029802322, w: -1}
+  m_LocalPosition: {x: 9.648415, y: 4.0640097, z: -107.580376}
   m_LocalScale: {x: 60.478302, y: 60.478302, z: 60.478302}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -62,8 +62,9 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
     [SerializeField] float sittingThighPad = 0.13f;
     [SerializeField] float standingHipHeight = 0.9f;
     [SerializeField] float altarFrontZ = 41.4f;
-    [SerializeField] float pewSeatOffset = 0.04f;
-    [SerializeField] float pewBackOffset = 0.05f;
+    [SerializeField] float pewSeatOffset = 0.08f;
+    [SerializeField] float pewBackOffset = 0.06f;
+    [SerializeField] float sitForwardOffset = -0.12f;
 
     [Header("Infection Reactions")]
     [SerializeField, Min(0.1f)] float groomHitHoldDuration = 2.35f;
@@ -75,8 +76,16 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
     [SerializeField] Transform[] guestSources;
     [SerializeField] Transform[] infectedRearGuests;
     [SerializeField] RuntimeAnimatorController guestSitController;
+    [SerializeField] RuntimeAnimatorController guestStandController;
+    [SerializeField] RuntimeAnimatorController cutsceneActorController;
     [SerializeField] bool spawnSittingGuests = true;
-    [SerializeField] bool spawnInfectedRearGuests = true;
+    [SerializeField] bool spawnInfectedRearGuests = false;
+
+    [Header("Dialogue Babble")]
+    [SerializeField] bool playDialogueBabble = true;
+    [SerializeField, Range(0f, 1f)] float dialogueBabbleVolume = 0.55f;
+    [SerializeField] AudioClip maleBabbleClip;
+    [SerializeField] AudioClip femaleBabbleClip;
     [SerializeField] Vector3[] infectedRearStartPositions =
     {
         new Vector3(300.4f, 2.53f, 57.2f),
@@ -90,15 +99,29 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
     static readonly int SpeedHash = Animator.StringToHash("Speed");
     static readonly int HitHash = Animator.StringToHash("Hit");
-    static readonly int KickHash = Animator.StringToHash("Kick");
-    const string KickState = "kick-to-the-groin";
     const string GettingHitState = "getting-hit";
     const string WalkBackState = "walking-backwards";
+    const string ZombieScreamState = "zombie-scream";
+    const string ZombieAttackState = "zombie-attack";
+    const string IdleState = "idle";
     static readonly string[] SittingStates =
     {
         "female-sitting-pose",
         "sitting-and-pointing",
+        "sitting-rubbing-arm",
+        "sitting-and-pointing",
+        "female-sitting-pose",
         "sitting-rubbing-arm"
+    };
+    static readonly string[] ForbiddenCoupleSitStates =
+    {
+        "female-sitting-pose",
+        "sitting-and-pointing",
+        "sitting-rubbing-arm",
+        "sitting-and-pointing",
+        "female-sitting-pose",
+        "sitting-rubbing-arm",
+        "kick-to-the-groin"
     };
 
     Animator sherallAnimator;
@@ -117,6 +140,8 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
     GUIStyle speakerStyle;
     GUIStyle dialogueStyle;
     GUIStyle promptStyle;
+    GUIStyle loadingStyle;
+    Font loadingFont;
     string currentSpeaker = "";
     string currentDialogue = "";
     float dialogueAlpha;
@@ -124,7 +149,10 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
     bool isTransitioning;
     bool sequenceComplete;
     bool awaitingCeremonyStart;
+    bool guestsAreSeated;
     bool faceBrideTowardElder;
+    AudioSource dialogueAudio;
+    Coroutine dialogueBabbleRoutine;
 
     void Awake()
     {
@@ -168,6 +196,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
         panelTexture = MakeTexture(new Color(0.015f, 0.012f, 0.018f, 0.92f));
         accentTexture = MakeTexture(new Color(0.78f, 0.58f, 0.24f, 1f));
+        ResolveLoadingFont();
 
         if (createWarmCandleGlow)
             CreateCandleGlow();
@@ -176,8 +205,12 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
         SpawnSittingGuests();
         SpawnInfectedRearGuests();
+        HideInfectedRearGuests();
+        if (aswangGuest != null)
+            aswangGuest.gameObject.SetActive(false);
         OpenAisleForBride();
         LockAllAnimatorsToGround();
+        SetupDialogueAudio();
     }
 
     IEnumerator Start()
@@ -188,10 +221,15 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             TakeCinematicControl();
 
         FaceEachOther(sherall, groom);
+        ForceBrideStandingPose();
+        ForbidCoupleSitAnimation(groomAnimator);
         SetShot(
             Midpoint(sherall, groom, 0f) + new Vector3(0f, 2.4f, 4.8f),
             Midpoint(sherall, groom, 1.35f),
             42f);
+
+        // Guests stand during the bridal entrance; sit once the vows begin.
+        SeatGuestsInPlaceForVows();
 
         yield return ShowLine(
             "NARRATION",
@@ -248,6 +286,8 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             false);
         yield return brideShock;
         yield return shockCamera;
+        ForceBrideStandingPose();
+        ForbidCoupleSitAnimation(groomAnimator);
 
         PlaceElderAtAisleStart();
         if (elder != null)
@@ -272,8 +312,9 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
                 elderWalkDuration,
                 elderAnimator,
                 0.85f,
-                true,
+                false,
                 CoupleLookPoint()));
+        // Front/altar POV watching the elder walk toward the bride and groom.
         Coroutine elderCamera = StartCoroutine(
             WatchApproachFromAltar(elder, elderWalkDuration, 48f));
         yield return ShowLine(
@@ -341,29 +382,15 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             1f,
             false);
 
-        faceBrideTowardElder = false;
-        yield return MoveCamera(
-            aswangGuest.position + new Vector3(-4f, 2.1f, 4.5f),
-            aswangGuest.position + Vector3.up * 1.4f,
-            0.8f,
-            42f);
-        Coroutine aswangWalk = StartCoroutine(
-            MoveCharacter(
-                aswangGuest,
-                aswangDestination,
-                aswangWalkDuration,
-                aswangAnimator,
-                1f));
-        yield return ShowLine(
-            "NARRATION",
-            "Behind them, one of the wedding guests answered the groom's whisper with an inhuman step.",
-            4.8f);
-        yield return aswangWalk;
+        // Keep the camera on elder / bride / groom — no rear zombie walk cutaway.
+        if (aswangGuest != null)
+            aswangGuest.gameObject.SetActive(false);
+        HideInfectedRearGuests();
 
         yield return MoveCamera(
             ElderCounselCameraPosition(),
             ElderCounselLookTarget(),
-            0.7f,
+            0.55f,
             42f);
         faceBrideTowardElder = true;
         FaceBrideAndElder();
@@ -479,6 +506,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         currentSpeaker = speaker;
         currentDialogue = dialogue;
         dialogueAlpha = 0f;
+        StartDialogueBabble(speaker, dialogue, duration);
 
         float started = Time.unscaledTime;
         while (Time.unscaledTime - started < duration)
@@ -491,12 +519,14 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
             if (SkipSequencePressed())
             {
+                StopDialogueBabble();
                 BeginGameplayTransition();
                 yield break;
             }
 
             if (elapsed > 0.35f && AdvancePressed())
             {
+                StopDialogueBabble();
                 yield return FadeDialogueOut(0.18f);
                 break;
             }
@@ -504,6 +534,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             yield return null;
         }
 
+        StopDialogueBabble();
         dialogueAlpha = 0f;
         currentSpeaker = "";
         currentDialogue = "";
@@ -532,14 +563,21 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         if (controllerWasEnabled)
             controller.enabled = false;
 
-        yield return PlayStandingClip(
-            groom,
-            groomAnimator,
-            GettingHitState,
-            groomHitHoldDuration + 1.4f);
-        FaceTarget(groom, sherall != null ? sherall.position : groom.position + groom.forward);
+        EnsureCutsceneAnimator(groomAnimator);
+        ForbidCoupleSitAnimation(groomAnimator);
+
+        Vector3 bridePoint = sherall != null ? sherall.position : groom.position + groom.forward;
+        FaceTarget(groom, bridePoint);
+
+        // Subtle infection: a short standing hit spasm while still facing Sherall.
+        // No big turn, scream, kick, or sit pose.
+        float hold = Mathf.Clamp(groomHitHoldDuration, 1.1f, 1.8f);
+        yield return PlayStandingClip(groom, groomAnimator, GettingHitState, hold);
+
+        FaceTarget(groom, bridePoint);
         KeepStandingOnFloor(groom, standingHipHeight);
         RestoreStandingIdle(groomAnimator);
+        ForbidCoupleSitAnimation(groomAnimator);
 
         if (controllerWasEnabled)
             controller.enabled = true;
@@ -551,12 +589,13 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             yield break;
 
         Vector3 start = SnapToChurchFloor(sherall.position);
-        Vector3 away = start - groom.position;
-        away.y = 0f;
+        Vector3 away = Horizontal(start - groom.position);
         if (away.sqrMagnitude < 0.01f)
-            away = -sherall.forward;
+            away = -Horizontal(sherall.forward);
+        away.Normalize();
 
-        Vector3 destination = SnapToChurchFloor(start + away.normalized * brideShockStepDistance);
+        float stepDistance = Mathf.Max(1.35f, brideShockStepDistance);
+        Vector3 destination = SnapToChurchFloor(start + away * stepDistance);
         FaceTarget(sherall, groom.position);
 
         CharacterController controller = sherall.GetComponent<CharacterController>();
@@ -565,12 +604,18 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             controller.enabled = false;
 
         EnsureCutsceneAnimator(sherallAnimator);
+        ForbidCoupleSitAnimation(sherallAnimator);
+        // Hard-clear any sit controller/pose before she steps back.
+        ForceBrideStandingPose();
+
         float elapsed = 0f;
-        while (elapsed < brideShockStepDuration && !sequenceComplete)
+        float duration = Mathf.Max(2.4f, brideShockStepDuration);
+        while (elapsed < duration && !sequenceComplete)
         {
-            HoldAnimatorState(sherallAnimator, WalkBackState);
+            HoldLoopingState(sherallAnimator, WalkBackState);
+            ForbidCoupleSitAnimation(sherallAnimator);
             elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / brideShockStepDuration));
+            float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / duration));
             Vector3 next = Vector3.Lerp(start, destination, t);
             sherall.position = SnapToChurchFloor(next);
             FaceTarget(sherall, groom.position);
@@ -580,20 +625,56 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
         sherall.position = destination;
         KeepStandingOnFloor(sherall, standingHipHeight);
-        RestoreStandingIdle(sherallAnimator);
         FaceTarget(sherall, groom.position);
+        ForceBrideStandingPose();
 
         if (controllerWasEnabled)
             controller.enabled = true;
     }
 
+    void ForceBrideStandingPose()
+    {
+        if (sherall == null)
+            return;
+
+        EnsureCutsceneAnimator(sherallAnimator);
+        ForbidCoupleSitAnimation(sherallAnimator);
+        if (guestSitController != null &&
+            sherallAnimator != null &&
+            sherallAnimator.runtimeAnimatorController == guestSitController)
+        {
+            if (cutsceneActorController != null)
+                sherallAnimator.runtimeAnimatorController = cutsceneActorController;
+            else if (guestStandController != null)
+                sherallAnimator.runtimeAnimatorController = guestStandController;
+        }
+
+        RestoreStandingIdle(sherallAnimator);
+        KeepStandingOnFloor(sherall, standingHipHeight);
+        ForbidCoupleSitAnimation(sherallAnimator);
+    }
+
+    void HideInfectedRearGuests()
+    {
+        if (infectedRearGuests == null)
+            return;
+
+        for (int i = 0; i < infectedRearGuests.Length; i++)
+        {
+            if (infectedRearGuests[i] != null)
+                infectedRearGuests[i].gameObject.SetActive(false);
+        }
+    }
+
     IEnumerator PlayStandingClip(Transform body, Animator animator, string stateName, float duration)
     {
         EnsureCutsceneAnimator(animator);
+        ForbidCoupleSitAnimation(animator);
         float elapsed = 0f;
         while (elapsed < duration && !sequenceComplete)
         {
-            HoldAnimatorState(animator, stateName);
+            HoldLoopingState(animator, stateName);
+            ForbidCoupleSitAnimation(animator);
             KeepStandingOnFloor(body, standingHipHeight);
             elapsed += Time.unscaledDeltaTime;
             yield return null;
@@ -621,6 +702,40 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             animator.speed = 1f;
     }
 
+    static void HoldLoopingState(Animator animator, string stateName)
+    {
+        if (animator == null || string.IsNullOrEmpty(stateName))
+            return;
+
+        animator.applyRootMotion = false;
+        animator.speed = 1f;
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+        if (!info.IsName(stateName) || info.normalizedTime >= 0.98f)
+        {
+            animator.Play(stateName, 0, 0f);
+            animator.Update(0f);
+        }
+    }
+
+    void ForbidCoupleSitAnimation(Animator animator)
+    {
+        if (animator == null)
+            return;
+
+        if (guestSitController != null && animator.runtimeAnimatorController == guestSitController)
+            EnsureCutsceneAnimator(animator);
+
+        AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+        for (int i = 0; i < ForbiddenCoupleSitStates.Length; i++)
+        {
+            if (info.IsName(ForbiddenCoupleSitStates[i]))
+            {
+                RestoreStandingIdle(animator);
+                return;
+            }
+        }
+    }
+
     static void RestoreStandingIdle(Animator animator)
     {
         if (animator == null)
@@ -629,7 +744,11 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         animator.applyRootMotion = false;
         animator.speed = 1f;
         animator.SetFloat(SpeedHash, 0f);
-        animator.Play("Blend Tree", 0, 0f);
+        // Prefer dedicated idle; fall back to blend tree controllers.
+        if (animator.HasState(0, Animator.StringToHash("idle")))
+            animator.Play("idle", 0, 0f);
+        else
+            animator.Play("Blend Tree", 0, 0f);
         animator.Update(0f);
     }
 
@@ -785,8 +904,8 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         }
 
         SetSpeed(animator, 0f);
-        if (ignoreCollision && controllerWasEnabled)
-            characterController.enabled = false;
+        if (ignoreCollision && characterController != null && controllerWasEnabled)
+            characterController.enabled = true;
     }
 
     void MoveWithCollision(
@@ -942,6 +1061,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
     void BeginGameplayTransition()
     {
+        StopDialogueBabble();
         if (isTransitioning)
             return;
 
@@ -964,6 +1084,10 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             screenFade = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / transitionDuration));
             yield return null;
         }
+
+        screenFade = 1f;
+        // Hold so LOADING... is readable before Level1 starts.
+        yield return new WaitForSecondsRealtime(0.85f);
 
         if (Application.CanStreamedLevelBeLoaded(gameplayScene))
         {
@@ -1001,22 +1125,88 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             if (meshFilter == null || meshFilter.sharedMesh == null)
                 continue;
 
-            string objectName = meshFilter.gameObject.name.ToLowerInvariant();
-            bool needsCollider =
-                objectName.Contains("bench") ||
-                objectName.Contains("owenground") ||
-                objectName.Contains("ground") ||
-                objectName.Contains("floor") ||
-                objectName.Contains("flowerstand") ||
-                objectName.Contains("foliageplant") ||
-                objectName.Contains("sm_flowers") ||
-                objectName.Contains("flower");
-            if (!needsCollider || meshFilter.GetComponent<Collider>() != null)
+            if (!NeedsSolidEnvironmentCollider(meshFilter.gameObject.name))
                 continue;
+
+            Collider existing = meshFilter.GetComponent<Collider>();
+            if (existing != null)
+            {
+                // Keep church props solid so the elder cannot walk through them.
+                existing.isTrigger = false;
+                continue;
+            }
 
             MeshCollider meshCollider = meshFilter.gameObject.AddComponent<MeshCollider>();
             meshCollider.sharedMesh = meshFilter.sharedMesh;
             meshCollider.convex = false;
+            meshCollider.isTrigger = false;
+        }
+
+        EnsurePewBlockingColliders();
+        Physics.SyncTransforms();
+    }
+
+    static bool NeedsSolidEnvironmentCollider(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName))
+            return false;
+
+        string name = objectName.ToLowerInvariant();
+        return name.Contains("bench") ||
+               name.Contains("pew") ||
+               name.Contains("chair") ||
+               name.Contains("altar") ||
+               name.Contains("pillar") ||
+               name.Contains("column") ||
+               name.Contains("rail") ||
+               name.Contains("wall") ||
+               name.Contains("door") ||
+               name.Contains("owenground") ||
+               name.Contains("ground") ||
+               name.Contains("floor") ||
+               name.Contains("flowerstand") ||
+               name.Contains("foliageplant") ||
+               name.Contains("sm_flowers") ||
+               name.Contains("flower") ||
+               name.Contains("candle") ||
+               name.Contains("stand") ||
+               name.Contains("fence") ||
+               name.Contains("barrier");
+    }
+
+    void EnsurePewBlockingColliders()
+    {
+        Transform[] pews = FindOriginalWeddingPews();
+        for (int i = 0; i < pews.Length; i++)
+        {
+            Transform pew = pews[i];
+            if (pew == null)
+                continue;
+
+            // Existing mesh colliders stay solid.
+            Collider[] existing = pew.GetComponentsInChildren<Collider>(true);
+            for (int c = 0; c < existing.Length; c++)
+            {
+                if (existing[c] == null)
+                    continue;
+                if (existing[c].name == "PewSeatCollider")
+                    continue;
+                existing[c].isTrigger = false;
+            }
+
+            if (pew.Find("PewBlockCollider") != null)
+                continue;
+
+            // Extra solid body so CharacterControllers cannot clip through thin bench meshes.
+            GameObject block = new GameObject("PewBlockCollider");
+            block.transform.SetParent(pew, false);
+            block.transform.localPosition = Vector3.zero;
+            block.transform.localRotation = Quaternion.identity;
+            block.transform.localScale = Vector3.one;
+            BoxCollider box = block.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, 0.38f, 0f);
+            box.size = new Vector3(1.85f, 0.9f, 0.52f);
+            box.isTrigger = false;
         }
     }
 
@@ -1035,17 +1225,31 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         for (int i = 0; i < pews.Length; i++)
         {
             Transform pew = pews[i];
-            if (pew.Find("PewSeatCollider") != null)
+            if (pew == null)
                 continue;
+
+            Transform existingSeat = pew.Find("PewSeatCollider");
+            if (existingSeat != null)
+            {
+                BoxCollider existingBox = existingSeat.GetComponent<BoxCollider>();
+                if (existingBox != null)
+                {
+                    // Seat volume is solid enough to stop bodies, thin enough for sit poses.
+                    existingBox.isTrigger = false;
+                    existingBox.center = new Vector3(0f, 0.28f, 0.02f);
+                    existingBox.size = new Vector3(1.7f, 0.55f, 0.42f);
+                }
+                continue;
+            }
 
             GameObject seat = new GameObject("PewSeatCollider");
             seat.transform.SetParent(pew, false);
             seat.transform.localPosition = Vector3.zero;
             seat.transform.localRotation = Quaternion.identity;
             BoxCollider box = seat.AddComponent<BoxCollider>();
-            box.center = new Vector3(0f, 0.02f, 0.02f);
-            box.size = new Vector3(1.6f, 0.42f, 0.1f);
-            box.isTrigger = true;
+            box.center = new Vector3(0f, 0.28f, 0.02f);
+            box.size = new Vector3(1.7f, 0.55f, 0.42f);
+            box.isTrigger = false;
         }
 
         Physics.SyncTransforms();
@@ -1077,17 +1281,19 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         GuestSeat[] seats = BuildPewSeats();
         if (sittingGuests != null && sittingGuests.Length > 0)
         {
+            // Keep guests at their scene placements. Stand first; sit at vows.
             seatedGuestPositions = new Vector3[sittingGuests.Length];
             seatedGuestYaws = new float[sittingGuests.Length];
             seatedGuestSeatYs = new float[sittingGuests.Length];
+            guestsAreSeated = false;
             for (int i = 0; i < sittingGuests.Length; i++)
             {
                 Transform guest = sittingGuests[i];
-                if (guest == null)
+                if (guest == null || IsWeddingCastMember(guest))
                     continue;
 
-                GuestSeat seat = seats[i % seats.Length];
-                ApplySittingPose(guest, seat, i);
+                CaptureGuestHomePose(guest, i);
+                ApplyStandingPoseInPlace(guest, i);
             }
 
             return;
@@ -1125,7 +1331,6 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
                 face = Horizontal(-pew.forward);
             along.Normalize();
             face.Normalize();
-            float yaw = Quaternion.LookRotation(face).eulerAngles.y;
             Vector3 origin = PewSeatOrigin(pew, face);
             bool longPew = pew.lossyScale.x >= 1.05f && pew.position.z >= 43.2f;
             int guestCount = longPew ? 2 : 1;
@@ -1144,6 +1349,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
                 position.x = seatPoint.x;
                 position.z = seatPoint.z;
                 position.y = seatY;
+                float yaw = YawTowardCouple(position);
                 seats.Add(new GuestSeat(position, yaw, seatY, sitIndex++));
             }
         }
@@ -1276,6 +1482,277 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         return value;
     }
 
+    bool IsWeddingCastMember(Transform guest)
+    {
+        if (guest == null)
+            return false;
+        return guest == sherall || guest == groom || guest == priest || guest == elder || guest == aswangGuest;
+    }
+
+    void CaptureGuestHomePose(Transform guest, int index)
+    {
+        if (guest == null || seatedGuestPositions == null || index < 0 || index >= seatedGuestPositions.Length)
+            return;
+
+        seatedGuestPositions[index] = guest.position;
+        seatedGuestYaws[index] = guest.eulerAngles.y;
+        seatedGuestSeatYs[index] = guest.position.y;
+    }
+
+    void ApplyStandingPoseInPlace(Transform guest, int index)
+    {
+        if (guest == null)
+            return;
+        if (IsWeddingCastMember(guest))
+            return;
+
+        guest.gameObject.SetActive(true);
+        DisableCharacterController(guest);
+        KeepGuestAtHomePose(guest, index);
+
+        Animator animator = FindAnimator(guest);
+        if (animator == null)
+            return;
+
+        RuntimeAnimatorController controller = guestStandController;
+        if (controller == null && guestSitController == null && sherallAnimator != null)
+            controller = sherallAnimator.runtimeAnimatorController;
+        if (controller == null)
+            controller = guestSitController;
+        if (controller != null)
+            animator.runtimeAnimatorController = controller;
+
+        animator.applyRootMotion = false;
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.speed = 1f;
+        if (guestStandController != null)
+            animator.Play("idle", 0, (index * 0.13f) % 1f);
+        else
+        {
+            animator.SetFloat(SpeedHash, 0f);
+            animator.Play("Blend Tree", 0, 0f);
+        }
+        animator.Update(0f);
+        KeepGuestAtHomePose(guest, index);
+    }
+
+    void SeatGuestsInPlaceForVows()
+    {
+        if (sittingGuests == null || sittingGuests.Length == 0)
+            return;
+
+        if (seatedGuestPositions == null || seatedGuestPositions.Length != sittingGuests.Length)
+        {
+            seatedGuestPositions = new Vector3[sittingGuests.Length];
+            seatedGuestYaws = new float[sittingGuests.Length];
+            seatedGuestSeatYs = new float[sittingGuests.Length];
+        }
+
+        for (int i = 0; i < sittingGuests.Length; i++)
+        {
+            Transform guest = sittingGuests[i];
+            if (guest == null || IsWeddingCastMember(guest))
+                continue;
+
+            if (seatedGuestPositions[i] == Vector3.zero)
+                CaptureGuestHomePose(guest, i);
+            ApplySittingPoseInPlace(guest, i);
+        }
+
+        guestsAreSeated = true;
+    }
+
+    void ApplySittingPoseInPlace(Transform guest, int index)
+    {
+        if (guest == null)
+            return;
+        if (IsWeddingCastMember(guest))
+            return;
+
+        guest.gameObject.SetActive(true);
+        DisableCharacterController(guest);
+        AttachSittingCollider(guest);
+
+        Vector3 home = seatedGuestPositions != null && index < seatedGuestPositions.Length
+            ? seatedGuestPositions[index]
+            : guest.position;
+
+        // Seat depth uses the pew's aisle-facing direction so butts land on the plank.
+        Vector3 aisleFace = Horizontal(CoupleFocusPoint() - home);
+        if (aisleFace.sqrMagnitude < 0.0001f)
+            aisleFace = Vector3.forward;
+        aisleFace.Normalize();
+
+        Vector3 sitPos = home + aisleFace * sitForwardOffset;
+        float seatSurfaceY = EstimateInPlaceSeatHeight(home.y);
+        Transform pew = FindNearestWeddingPew(home);
+        if (pew != null)
+            sitPos = BuildForwardSitPosition(pew, home, aisleFace, out seatSurfaceY);
+
+        // During vows, every seated guest looks toward the bride and groom.
+        float yaw = YawTowardCouple(sitPos);
+
+        guest.position = new Vector3(sitPos.x, home.y, sitPos.z);
+        guest.rotation = Quaternion.Euler(0f, yaw, 0f);
+
+        Animator animator = FindAnimator(guest);
+        if (animator == null)
+            return;
+
+        RuntimeAnimatorController controller = guestSitController;
+        if (controller == null && sherallAnimator != null)
+            controller = sherallAnimator.runtimeAnimatorController;
+        if (controller != null)
+            animator.runtimeAnimatorController = controller;
+
+        animator.applyRootMotion = false;
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.speed = 0.9f + (index % 4) * 0.05f;
+        animator.Play(SittingStates[index % SittingStates.Length], 0, 0.2f + (index * 0.07f) % 0.6f);
+        animator.Update(0f);
+
+        SettleSittingGuest(guest, seatSurfaceY);
+        guest.rotation = Quaternion.Euler(0f, yaw, 0f);
+        CaptureGuestHomePose(guest, index);
+        if (seatedGuestSeatYs != null && index < seatedGuestSeatYs.Length)
+            seatedGuestSeatYs[index] = seatSurfaceY;
+    }
+
+    Vector3 CoupleFocusPoint()
+    {
+        if (sherall != null && groom != null)
+            return Midpoint(sherall, groom, 0f);
+        if (sherall != null)
+            return sherall.position;
+        if (groom != null)
+            return groom.position;
+        return new Vector3(303.46f, churchFloorY, 39f);
+    }
+
+    float YawTowardCouple(Vector3 fromPosition)
+    {
+        Vector3 toCouple = Horizontal(CoupleFocusPoint() - fromPosition);
+        if (toCouple.sqrMagnitude < 0.0001f)
+            return 0f;
+        return Quaternion.LookRotation(toCouple).eulerAngles.y;
+    }
+
+    Vector3 BuildForwardSitPosition(Transform pew, Vector3 home, Vector3 face, out float seatY)
+    {
+        Vector3 pewFace = Horizontal(pew.up);
+        if (pewFace.sqrMagnitude < 0.0001f)
+            pewFace = Horizontal(-pew.forward);
+        pewFace.Normalize();
+        if (Vector3.Dot(pewFace, face) < 0f)
+            pewFace = -pewFace;
+
+        Vector3 along = Horizontal(pew.right);
+        if (along.sqrMagnitude < 0.0001f)
+            along = Vector3.Cross(Vector3.up, pewFace);
+        along.Normalize();
+
+        Vector3 origin = PewSeatOrigin(pew, pewFace);
+        float lateral = Vector3.Dot(home - origin, along);
+        // Seat origin is already on the plank; only nudge a little along face.
+        // Negative sitForwardOffset pulls toward the backrest (fixes floating in the aisle).
+        Vector3 sitPos = origin + along * lateral + pewFace * sitForwardOffset;
+
+        Vector3 seatPoint;
+        seatY = MeasurePewSeatY(pew, sitPos, out seatPoint);
+        sitPos.x = seatPoint.x;
+        sitPos.z = seatPoint.z;
+
+        // If the measured point still sits ahead of the plank, ease back onto the seat.
+        Vector3 fromOrigin = Horizontal(sitPos - origin);
+        float depth = Vector3.Dot(fromOrigin, pewFace);
+        if (depth > 0.06f)
+            sitPos -= pewFace * (depth - 0.06f);
+        else if (depth < -0.04f)
+            sitPos -= pewFace * (depth + 0.04f);
+
+        return sitPos;
+    }
+
+    Transform FindNearestWeddingPew(Vector3 position)
+    {
+        Transform[] pews = FindOriginalWeddingPews();
+        Transform best = null;
+        float bestDist = float.MaxValue;
+        for (int i = 0; i < pews.Length; i++)
+        {
+            Transform pew = pews[i];
+            if (pew == null)
+                continue;
+
+            float dist = HorizontalDistanceSq(position, pew.position);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = pew;
+            }
+        }
+
+        return best;
+    }
+
+    float EstimateInPlaceSeatHeight(float standingRootY)
+    {
+        // Mixamo sit clips drop the hips a lot. Raise them onto a seat-like height
+        // without changing the guest's placed XZ position.
+        float fromStanding = standingRootY + 0.55f;
+        float fromChurch = churchFloorY + 0.55f;
+        return Mathf.Max(fromStanding, fromChurch, sittingRootY);
+    }
+
+    static void SitGuestOnSurface(Transform guest, Animator animator, float seatSurfaceY)
+    {
+        if (guest == null)
+            return;
+
+        Transform leftThigh = animator != null ? animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg) : null;
+        Transform rightThigh = animator != null ? animator.GetBoneTransform(HumanBodyBones.RightUpperLeg) : null;
+        Transform hips = animator != null ? animator.GetBoneTransform(HumanBodyBones.Hips) : null;
+
+        float contactY;
+        if (leftThigh != null && rightThigh != null)
+            contactY = (leftThigh.position.y + rightThigh.position.y) * 0.5f;
+        else if (hips != null)
+            contactY = hips.position.y - 0.12f;
+        else
+        {
+            // Fallback: hard lift so they cannot remain buried in the floor.
+            guest.position += Vector3.up * 0.6f;
+            return;
+        }
+
+        float lift = seatSurfaceY - contactY;
+        if (Mathf.Abs(lift) > 0.001f)
+            guest.position += Vector3.up * lift;
+
+        // Second pass after moving root, because humanoid bones move with it.
+        if (leftThigh != null && rightThigh != null)
+        {
+            contactY = (leftThigh.position.y + rightThigh.position.y) * 0.5f;
+            lift = seatSurfaceY - contactY;
+            if (Mathf.Abs(lift) > 0.001f)
+                guest.position += Vector3.up * lift;
+        }
+    }
+
+    void KeepGuestAtHomePose(Transform character, int index)
+    {
+        if (character == null || !character.gameObject.activeInHierarchy)
+            return;
+        if (seatedGuestPositions == null || index < 0 || index >= seatedGuestPositions.Length)
+            return;
+        if (seatedGuestPositions[index] == Vector3.zero)
+            return;
+
+        DisableCharacterController(character);
+        character.position = seatedGuestPositions[index];
+        character.rotation = Quaternion.Euler(0f, seatedGuestYaws[index], 0f);
+    }
+
     void ApplySittingPose(Transform guest, GuestSeat seat, int index)
     {
         guest.gameObject.SetActive(true);
@@ -1283,13 +1760,14 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         float weddingScale = WeddingGuestScale();
         guest.localScale = new Vector3(weddingScale, weddingScale, weddingScale);
         Vector3 seated = new Vector3(seat.position.x, seat.seatY, seat.position.z);
+        float yaw = YawTowardCouple(seated);
         guest.position = seated;
-        guest.rotation = Quaternion.Euler(0f, seat.yaw, 0f);
+        guest.rotation = Quaternion.Euler(0f, yaw, 0f);
         AttachSittingCollider(guest);
         if (seatedGuestPositions != null && index < seatedGuestPositions.Length)
         {
             seatedGuestPositions[index] = seated;
-            seatedGuestYaws[index] = seat.yaw;
+            seatedGuestYaws[index] = yaw;
             seatedGuestSeatYs[index] = seat.seatY;
         }
 
@@ -1494,12 +1972,19 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         KeepStandingOnFloor(priest, standingHipHeight);
         KeepStandingOnFloor(elder, standingHipHeight);
         KeepStandingOnFloor(aswangGuest, standingHipHeight);
+        ForbidCoupleSitAnimation(sherallAnimator);
+        ForbidCoupleSitAnimation(groomAnimator);
         if (faceBrideTowardElder)
             FaceBrideAndElder();
         if (sittingGuests != null)
         {
             for (int i = 0; i < sittingGuests.Length; i++)
-                KeepSittingOnBench(sittingGuests[i], i);
+            {
+                if (guestsAreSeated)
+                    KeepSittingOnBench(sittingGuests[i], i);
+                else
+                    KeepGuestAtHomePose(sittingGuests[i], i);
+            }
         }
 
         if (infectedRearGuests != null)
@@ -1763,17 +2248,21 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
 
     static void EnsureCharacterController(Transform character)
     {
-        if (character == null || character.GetComponent<CharacterController>() != null)
+        if (character == null)
             return;
 
-        CharacterController controller = character.gameObject.AddComponent<CharacterController>();
+        CharacterController controller = character.GetComponent<CharacterController>();
+        if (controller == null)
+            controller = character.gameObject.AddComponent<CharacterController>();
+
         controller.center = new Vector3(0f, 1f, 0f);
         controller.height = 2f;
-        controller.radius = 0.3f;
+        controller.radius = 0.28f;
         controller.slopeLimit = 45f;
         controller.stepOffset = 0.25f;
         controller.skinWidth = 0.06f;
         controller.minMoveDistance = 0.001f;
+        controller.enabled = true;
     }
 
     static Animator FindAnimator(Transform character)
@@ -1822,8 +2311,14 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         if (animator == null)
             return;
 
-        RuntimeAnimatorController controller = guestSitController;
-        if (controller == null && sherallAnimator != null)
+        // Never force the guest sit controller onto bride/groom/cast.
+        RuntimeAnimatorController controller = cutsceneActorController;
+        if (controller == null)
+            controller = animator.runtimeAnimatorController;
+        if (guestSitController != null && controller == guestSitController)
+            controller = cutsceneActorController;
+        if (controller == null && sherallAnimator != null &&
+            sherallAnimator.runtimeAnimatorController != guestSitController)
             controller = sherallAnimator.runtimeAnimatorController;
         if (controller != null && animator.runtimeAnimatorController != controller)
             animator.runtimeAnimatorController = controller;
@@ -1831,6 +2326,7 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         animator.applyRootMotion = false;
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         animator.speed = 1f;
+        ForbidCoupleSitAnimation(animator);
     }
 
     static void FaceTarget(Transform character, Vector3 worldTarget)
@@ -1894,6 +2390,9 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             GUI.color = new Color(1f, 1f, 1f, screenFade);
             GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), panelTexture);
             GUI.color = previous;
+
+            if (isTransitioning && screenFade > 0.45f)
+                DrawLoadingText(Mathf.Clamp01((screenFade - 0.45f) / 0.55f));
         }
 
         if (awaitingCeremonyStart)
@@ -1937,6 +2436,21 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         GUI.color = previousColor;
     }
 
+    void DrawLoadingText(float alpha)
+    {
+        EnsureStyles();
+        float scale = Mathf.Clamp(Mathf.Min(Screen.width / 1920f, Screen.height / 1080f), 0.7f, 1.4f);
+        loadingStyle.fontSize = Mathf.RoundToInt(40f * scale);
+
+        Color previous = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, alpha);
+        GUI.Label(
+            new Rect(0f, Screen.height * 0.46f, Screen.width, 70f * scale),
+            "LOADING...",
+            loadingStyle);
+        GUI.color = previous;
+    }
+
     void DrawCeremonyPrompt()
     {
         EnsureStyles();
@@ -1962,6 +2476,163 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
             dialogueStyle);
     }
 
+
+    void SetupDialogueAudio()
+    {
+        dialogueAudio = gameObject.GetComponent<AudioSource>();
+        if (dialogueAudio == null)
+            dialogueAudio = gameObject.AddComponent<AudioSource>();
+
+        dialogueAudio.playOnAwake = false;
+        dialogueAudio.loop = false;
+        dialogueAudio.spatialBlend = 0f;
+        dialogueAudio.volume = dialogueBabbleVolume;
+        ResolveFreesoundBabbleClips();
+    }
+
+    void ResolveFreesoundBabbleClips()
+    {
+        if (maleBabbleClip != null && femaleBabbleClip != null)
+            return;
+
+#if UNITY_EDITOR
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("freesound t:AudioClip", new[] { "Assets/Audio" });
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string assetPath = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+            AudioClip clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+            if (clip == null)
+                continue;
+
+            string name = clip.name.ToLowerInvariant();
+            if (maleBabbleClip == null && name.Contains("male"))
+                maleBabbleClip = clip;
+            else if (femaleBabbleClip == null && name.Contains("female"))
+                femaleBabbleClip = clip;
+        }
+
+        // If names are generic freesound_* without male/female, take first two.
+        if ((maleBabbleClip == null || femaleBabbleClip == null) && guids.Length > 0)
+        {
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[i]);
+                AudioClip clip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
+                if (clip == null)
+                    continue;
+                if (maleBabbleClip == null)
+                    maleBabbleClip = clip;
+                else if (femaleBabbleClip == null && clip != maleBabbleClip)
+                    femaleBabbleClip = clip;
+            }
+        }
+#endif
+
+        if (maleBabbleClip == null)
+            maleBabbleClip = Resources.Load<AudioClip>("freesound-male-babble");
+        if (femaleBabbleClip == null)
+            femaleBabbleClip = Resources.Load<AudioClip>("freesound-female-babble");
+    }
+
+    void StartDialogueBabble(string speaker, string dialogue, float duration)
+    {
+        StopDialogueBabble();
+        if (!playDialogueBabble || dialogueAudio == null)
+            return;
+
+        dialogueBabbleRoutine = StartCoroutine(PlayDialogueBabble(speaker, duration));
+    }
+
+    void StopDialogueBabble()
+    {
+        if (dialogueBabbleRoutine != null)
+        {
+            StopCoroutine(dialogueBabbleRoutine);
+            dialogueBabbleRoutine = null;
+        }
+
+        if (dialogueAudio != null && dialogueAudio.isPlaying)
+            dialogueAudio.Stop();
+        if (dialogueAudio != null)
+        {
+            dialogueAudio.clip = null;
+            dialogueAudio.pitch = 1f;
+            dialogueAudio.loop = false;
+        }
+    }
+
+    IEnumerator PlayDialogueBabble(string speaker, float duration)
+    {
+        AudioClip clip = GetBabbleClipForSpeaker(speaker);
+        if (clip == null)
+            yield break;
+
+        float pitch = GetBabblePitchForSpeaker(speaker);
+        dialogueAudio.clip = clip;
+        dialogueAudio.pitch = pitch;
+        dialogueAudio.volume = dialogueBabbleVolume;
+        dialogueAudio.loop = clip.length + 0.05f < Mathf.Max(0.4f, duration - 0.2f);
+        dialogueAudio.time = 0f;
+        dialogueAudio.Play();
+
+        float endAt = Time.unscaledTime + Mathf.Max(0.25f, duration - 0.15f);
+        while (Time.unscaledTime < endAt && !sequenceComplete)
+        {
+            if (!dialogueAudio.isPlaying && dialogueAudio.loop)
+                dialogueAudio.Play();
+            yield return null;
+        }
+
+        if (dialogueAudio != null)
+            dialogueAudio.Stop();
+    }
+
+    AudioClip GetBabbleClipForSpeaker(string speaker)
+    {
+        string key = NormalizeSpeakerKey(speaker);
+        bool female = key == "SHERALL";
+        AudioClip preferred = female ? femaleBabbleClip : maleBabbleClip;
+        if (preferred != null)
+            return preferred;
+        return femaleBabbleClip != null ? femaleBabbleClip : maleBabbleClip;
+    }
+
+    static float GetBabblePitchForSpeaker(string speaker)
+    {
+        switch (NormalizeSpeakerKey(speaker))
+        {
+            case "SHERALL":
+                return 1.12f;
+            case "GROOM":
+                return 0.96f;
+            case "OFFICIANT":
+                return 1.0f;
+            case "ELDER":
+                return 0.84f;
+            default:
+                return 0.92f;
+        }
+    }
+
+    static string NormalizeSpeakerKey(string speaker)
+    {
+        if (string.IsNullOrWhiteSpace(speaker))
+            return "NARRATION";
+
+        string key = speaker.Trim().ToUpperInvariant();
+        if (key.Contains("SHER") || key.Contains("BRIDE"))
+            return "SHERALL";
+        if (key.Contains("GROOM"))
+            return "GROOM";
+        if (key.Contains("PRIEST") || key.Contains("OFFICIANT"))
+            return "OFFICIANT";
+        if (key.Contains("ELDER"))
+            return "ELDER";
+        if (key.Contains("NARR"))
+            return "NARRATION";
+        return key;
+    }
+
     void EnsureStyles()
     {
         if (speakerStyle != null)
@@ -1972,6 +2643,29 @@ public sealed class Backstory1CutsceneController : MonoBehaviour
         dialogueStyle.wordWrap = true;
         dialogueStyle.alignment = TextAnchor.UpperLeft;
         promptStyle = CreateStyle(FontStyle.Normal, new Color(0.62f, 0.58f, 0.54f));
+        loadingStyle = CreateStyle(FontStyle.Normal, new Color(0.92f, 0.78f, 0.7f));
+        loadingStyle.alignment = TextAnchor.MiddleCenter;
+        if (loadingFont != null)
+            loadingStyle.font = loadingFont;
+    }
+
+    void ResolveLoadingFont()
+    {
+        if (loadingFont != null)
+            return;
+
+        loadingFont = Resources.Load<Font>("Blood Victim Zombie");
+#if UNITY_EDITOR
+        if (loadingFont == null)
+        {
+            string[] fontGuids = UnityEditor.AssetDatabase.FindAssets("Blood Victim Zombie t:Font");
+            if (fontGuids.Length > 0)
+            {
+                string fontPath = UnityEditor.AssetDatabase.GUIDToAssetPath(fontGuids[0]);
+                loadingFont = UnityEditor.AssetDatabase.LoadAssetAtPath<Font>(fontPath);
+            }
+        }
+#endif
     }
 
     static GUIStyle CreateStyle(FontStyle fontStyle, Color color)
