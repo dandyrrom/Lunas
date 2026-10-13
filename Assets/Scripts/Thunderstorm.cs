@@ -1,36 +1,39 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
-/// Dims the sun, ambient light, and sky, then holds a brighter lightning flash.
+/// After the level clear, the sun, sky, and baked light go out.
+/// Street lights and other local lights stay on.
+/// Lightning brings the saved scene brightness back, then it drops again.
 /// Put this on the scene Directional Light.
 /// </summary>
 [DisallowMultipleComponent]
 public class Thunderstorm : MonoBehaviour
 {
     [Header("Darkness")]
-    [Tooltip("How bright the storm stays between flashes. 1 is the scene as you saved it. Lower is darker.")]
-    [Range(0.2f, 1f)]
-    public float darkLevel = 0.28f;
+    [Tooltip("How bright the storm stays between flashes. 0 leaves only street lights and other local lights. 1 is the scene as you saved it.")]
+    [Range(0f, 1f)]
+    public float darkLevel = 0f;
 
     [Header("Lightning")]
-    [Tooltip("How bright the scene gets during a flash. 1 matches the saved scene. Higher is a stronger strike.")]
+    [Tooltip("How bright the scene gets during a flash. 1 matches the saved scene.")]
     [Range(0.5f, 3f)]
-    public float flashLevel = 1.4f;
+    public float flashLevel = 1f;
 
     [Tooltip("Seconds the scene stays at flash brightness.")]
-    [Min(0f)]
+    [UnityEngine.Min(0f)]
     public float brightHold = 0.5f;
 
     [Tooltip("Seconds to ease from the flash back down to the dark level.")]
-    [Min(0.01f)]
+    [UnityEngine.Min(0.01f)]
     public float fadeBack = 0.4f;
 
     [Tooltip("Shortest wait between flashes.")]
-    [Min(0.1f)]
+    [UnityEngine.Min(0.1f)]
     public float minGap = 3f;
 
     [Tooltip("Longest wait between flashes.")]
-    [Min(0.1f)]
+    [UnityEngine.Min(0.1f)]
     public float maxGap = 8f;
 
     [Header("Thunder")]
@@ -44,9 +47,14 @@ public class Thunderstorm : MonoBehaviour
     float baseSunIntensity = 1f;
     float baseAmbientIntensity = 1f;
     float baseSkyExposure = 1f;
+    float baseReflectionIntensity = 1f;
+    SphericalHarmonicsL2 baseAmbientProbe;
+    LightmapData[] savedLightmaps;
     bool hasSkyExposure;
+    bool blackoutActive;
+    bool bakedLightingOn = true;
 
-    float level;
+    float level = 1f;
     float nextFlashTime;
     float phaseStart;
     Phase phase = Phase.Waiting;
@@ -86,6 +94,9 @@ public class Thunderstorm : MonoBehaviour
         thunderSource.volume = thunderVolume;
 
         baseAmbientIntensity = RenderSettings.ambientIntensity;
+        baseReflectionIntensity = RenderSettings.reflectionIntensity;
+        baseAmbientProbe = RenderSettings.ambientProbe;
+        savedLightmaps = LightmapSettings.lightmaps;
 
         originalSky = RenderSettings.skybox;
         if (originalSky != null && originalSky.HasProperty("_Exposure"))
@@ -97,8 +108,14 @@ public class Thunderstorm : MonoBehaviour
         }
     }
 
-    void Start()
+    public void BeginBlackout()
     {
+        if (blackoutActive)
+            return;
+
+        blackoutActive = true;
+        DisableAutoExposure();
+        phase = Phase.Waiting;
         level = darkLevel;
         Apply(level);
         ScheduleNextFlash();
@@ -106,6 +123,9 @@ public class Thunderstorm : MonoBehaviour
 
     void Update()
     {
+        if (!blackoutActive)
+            return;
+
         if (phase == Phase.Waiting)
         {
             level = darkLevel;
@@ -147,6 +167,11 @@ public class Thunderstorm : MonoBehaviour
             sun.intensity = baseSunIntensity;
 
         RenderSettings.ambientIntensity = baseAmbientIntensity;
+        RenderSettings.reflectionIntensity = baseReflectionIntensity;
+        RenderSettings.ambientProbe = baseAmbientProbe;
+
+        if (savedLightmaps != null)
+            LightmapSettings.lightmaps = savedLightmaps;
 
         if (originalSky != null)
             RenderSettings.skybox = originalSky;
@@ -182,9 +207,39 @@ public class Thunderstorm : MonoBehaviour
             sun.intensity = baseSunIntensity * brightness;
 
         RenderSettings.ambientIntensity = baseAmbientIntensity * brightness;
+        RenderSettings.reflectionIntensity = baseReflectionIntensity * brightness;
 
         if (hasSkyExposure && skyCopy != null)
             skyCopy.SetFloat("_Exposure", baseSkyExposure * brightness);
+
+        bool showBaked = brightness > 0.85f;
+        if (showBaked == bakedLightingOn)
+            return;
+
+        bakedLightingOn = showBaked;
+        if (showBaked)
+        {
+            if (savedLightmaps != null)
+                LightmapSettings.lightmaps = savedLightmaps;
+            RenderSettings.ambientProbe = baseAmbientProbe;
+        }
+        else
+        {
+            LightmapSettings.lightmaps = System.Array.Empty<LightmapData>();
+            RenderSettings.ambientProbe = new SphericalHarmonicsL2();
+        }
+    }
+
+    static void DisableAutoExposure()
+    {
+        UnityEngine.Rendering.PostProcessing.PostProcessVolume volume =
+            FindFirstObjectByType<UnityEngine.Rendering.PostProcessing.PostProcessVolume>();
+        if (volume == null)
+            return;
+
+        UnityEngine.Rendering.PostProcessing.PostProcessProfile profile = volume.profile;
+        if (profile != null && profile.TryGetSettings(out UnityEngine.Rendering.PostProcessing.AutoExposure exposure))
+            exposure.enabled.value = false;
     }
 
     static Light FindDirectionalLight()

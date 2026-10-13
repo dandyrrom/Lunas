@@ -27815,8 +27815,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f3c1d6a4b2e49d0a7c5e1f8b9d04c22, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Thunderstorm
-  darkLevel: 0.2
-  flashLevel: 1.4
+  darkLevel: 0
+  flashLevel: 1
   brightHold: 0.5
   fadeBack: 0.4
   minGap: 6

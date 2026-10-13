@@ -66,6 +66,9 @@ public class SeaZombieSpawner : MonoBehaviour
 
             zombie.KillByCandleFire(clearFireVfx);
         }
+
+        Thunderstorm storm = FindFirstObjectByType<Thunderstorm>();
+        storm?.BeginBlackout();
     }
 
     IEnumerator SpawnLoop()
