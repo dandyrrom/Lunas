@@ -76393,7 +76393,10 @@ MonoBehaviour:
   objectiveText: {fileID: 0}
   goalText: {fileID: 0}
   beatObjectiveOnStart: 1
-  objectiveIntroDuration: 4
+  objectiveIntroDuration: 6.5
+  objectiveFadeOutDuration: 1.75
+  escapeObjectiveTitle: Reach the boat at the shore
+  escapeObjectiveInstructions: "The village is overrun \u2014 you don't need to kill them all.\nSneak when you can. Running and jumping make noise.\nUse garlic and the candle to survive. Cut through to the boat."
   beatGoalInPhaseB: 1
   beatSpeed: 6.5
   beatScaleAmount: 0.2
@@ -117584,7 +117587,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -69.7}
-  m_SizeDelta: {x: 720, y: 56}
+  m_SizeDelta: {x: 1100, y: 220}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1648236065
 MonoBehaviour:
@@ -117606,7 +117609,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Reach to the village port -- he's beyond it!!
+  m_text: Reach the boat at the shore
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
   m_sharedMaterial: {fileID: -7870439289142360562, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
@@ -117633,8 +117636,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 63.6
-  m_fontSizeBase: 63.6
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

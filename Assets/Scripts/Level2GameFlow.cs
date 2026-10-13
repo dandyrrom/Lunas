@@ -26,10 +26,21 @@ public class Level2GameFlow : MonoBehaviour
     public bool spawnAmbushHorde = true;
 
     [Header("Objective intro (ObjectiveText)")]
-    [Tooltip("Beat ObjectiveText at level start to announce the objective, then hide it.")]
+    [Tooltip("Beat ObjectiveText at level start to announce the objective, then fade it out.")]
     public bool beatObjectiveOnStart = true;
-    [Tooltip("How many seconds ObjectiveText stays visible (beating), then disappears.")]
-    public float objectiveIntroDuration = 4f;
+    [Tooltip("How many seconds ObjectiveText stays fully visible before fading.")]
+    public float objectiveIntroDuration = 6.5f;
+    [Tooltip("How many seconds the objective text takes to fade out.")]
+    public float objectiveFadeOutDuration = 1.75f;
+
+    [Header("Escape narration (written into ObjectiveText at start)")]
+    [TextArea(2, 5)]
+    public string escapeObjectiveTitle = "Reach the boat at the shore";
+    [TextArea(3, 8)]
+    public string escapeObjectiveInstructions =
+        "The village is overrun — you don't need to kill them all.\n" +
+        "Sneak when you can. Running and jumping make noise.\n" +
+        "Use garlic and the candle to survive. Cut through to the boat.";
 
     [Header("Goal beat (GoalText / Phase B)")]
     public bool beatGoalInPhaseB = true;
@@ -176,19 +187,39 @@ public class Level2GameFlow : MonoBehaviour
             if (exitMarker != null)
                 exitMarker.SetActive(true);
             phaseB = true;
-            beatingGoal = beatGoalInPhaseB;
+            beatingGoal = false;
             CacheGoalVisuals();
             if (goalText != null)
                 SetTextActive(goalText, false);
+            ApplyEscapeObjectiveCopy();
         }
         else if (exitMarker != null)
         {
             exitMarker.SetActive(false);
         }
 
+        CacheObjectiveVisuals();
+
         if (objectiveIntroRoutine != null)
             StopCoroutine(objectiveIntroRoutine);
         objectiveIntroRoutine = StartCoroutine(ObjectiveIntroRoutine());
+    }
+
+    void ApplyEscapeObjectiveCopy()
+    {
+        if (objectiveText == null)
+            return;
+
+        string title = string.IsNullOrWhiteSpace(escapeObjectiveTitle)
+            ? "Reach the boat at the shore"
+            : escapeObjectiveTitle.Trim();
+        string body = string.IsNullOrWhiteSpace(escapeObjectiveInstructions)
+            ? string.Empty
+            : escapeObjectiveInstructions.Trim();
+
+        objectiveText.text = string.IsNullOrEmpty(body) ? title : (title + "\n\n" + body);
+        objectiveText.enableWordWrapping = true;
+        objectiveText.overflowMode = TextOverflowModes.Overflow;
     }
 
     void Update()
@@ -274,21 +305,58 @@ public class Level2GameFlow : MonoBehaviour
             yield break;
 
         SetTextActive(objectiveText, true);
+        // Re-cache after escape copy is applied so fade restores the right base color.
+        CacheObjectiveVisuals();
+        Color startColor = objectiveBaseColor;
+        startColor.a = objectiveBaseColor.a <= 0.01f ? 1f : objectiveBaseColor.a;
+        objectiveBaseColor = startColor;
+        objectiveText.color = startColor;
+
         beatingObjective = beatObjectiveOnStart;
 
-        float duration = Mathf.Max(0f, objectiveIntroDuration);
+        // In escape mode phaseB is already true (exit open) — still show the intro.
+        float hold = Mathf.Max(0f, objectiveIntroDuration);
         float elapsed = 0f;
-        while (elapsed < duration && !phaseB && !panelOpen)
+        while (elapsed < hold && !panelOpen && (escapeMode || !phaseB))
         {
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         beatingObjective = false;
-        RestoreObjectiveVisuals();
+        if (objectiveText != null)
+            objectiveText.rectTransform.localScale = objectiveBaseScale;
 
-        if (!phaseB && !panelOpen)
+        if (panelOpen)
+        {
+            objectiveIntroRoutine = null;
+            yield break;
+        }
+
+        // Soft fade out, then hide.
+        float fade = Mathf.Max(0.05f, objectiveFadeOutDuration);
+        elapsed = 0f;
+        Color from = objectiveText.color;
+        while (elapsed < fade && !panelOpen)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fade);
+            Color c = from;
+            c.a = Mathf.Lerp(from.a, 0f, t);
+            objectiveText.color = c;
+            yield return null;
+        }
+
+        if (!panelOpen)
+        {
             SetTextActive(objectiveText, false);
+            // Keep full alpha ready if something shows this text again later.
+            Color restored = objectiveBaseColor;
+            restored.a = startColor.a;
+            objectiveBaseColor = restored;
+            objectiveText.color = restored;
+            objectiveText.rectTransform.localScale = objectiveBaseScale;
+        }
 
         objectiveIntroRoutine = null;
     }
