@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class FreeCamera : MonoBehaviour{
+public class AlchemistFreeCamera : MonoBehaviour{
 
 	public float movementSpeed = 5.0f;
 
