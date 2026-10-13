@@ -6,18 +6,24 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Level 2 objective flip: kill all aswangs → bell → reach swamp exit marker → end panel.
-/// Same loop as Level 1 on a tighter cemetery / swamp path. Level 3 is the finale later.
+/// Level 2 finals flow: escape the aswang village to the shore/boat exit → Level 3 port.
+/// Default is escape mode (exit open; kills optional). Kill-all mode still available if disabled.
 /// </summary>
 public class Level2GameFlow : MonoBehaviour
 {
     public static Level2GameFlow Instance { get; private set; }
 
     [Header("Objectives")]
-    [Tooltip("Phase A HUD text (Kill all aswangs).")]
+    [Tooltip("Intro / main objective text (e.g. reach the boat / port).")]
     public TMP_Text objectiveText;
-    [Tooltip("Phase B HUD text (reach the swamp exit).")]
+    [Tooltip("Optional secondary goal text.")]
     public TMP_Text goalText;
+
+    [Header("Escape mode")]
+    [Tooltip("If on: exit is open from the start; she does not need to kill all aswangs.")]
+    public bool escapeMode = true;
+    [Tooltip("Spawn a dense ambush horde at level start.")]
+    public bool spawnAmbushHorde = true;
 
     [Header("Objective intro (ObjectiveText)")]
     [Tooltip("Beat ObjectiveText at level start to announce the objective, then hide it.")]
@@ -162,6 +168,7 @@ public class Level2GameFlow : MonoBehaviour
     {
         UpdateObjectiveBeat();
         UpdateGoalBeat();
+        TryFinishByProximity();
 
         if (!waitingForSpace || Keyboard.current == null)
             return;
@@ -171,6 +178,25 @@ public class Level2GameFlow : MonoBehaviour
 
         waitingForSpace = false;
         StartCoroutine(ContinueRoutine());
+    }
+
+    void TryFinishByProximity()
+    {
+        if (!phaseB || panelOpen)
+            return;
+
+        Transform anchor = exitAnchor != null
+            ? exitAnchor
+            : (exitMarker != null ? exitMarker.transform : null);
+        if (anchor == null)
+            return;
+
+        ThirdPersonController player = FindFirstObjectByType<ThirdPersonController>();
+        if (player == null)
+            return;
+
+        if (Vector3.Distance(player.transform.position, anchor.position) <= exitProximityRadius)
+            NotifyExitReached();
     }
 
     void HandleScoreChanged(int killed, int total)
@@ -507,11 +533,29 @@ public class Level2GameFlow : MonoBehaviour
 
         MeshRenderer mr = exitMarker.GetComponent<MeshRenderer>();
         if (mr != null)
-            mr.enabled = false;
-
-        MeshFilter mf = exitMarker.GetComponent<MeshFilter>();
-        if (mf != null)
-            Destroy(mf);
+        {
+            mr.enabled = showExitMarkerVisually;
+            if (showExitMarkerVisually)
+            {
+                // Unlit-ish translucent green so the verify exit is obvious.
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null)
+                    shader = Shader.Find("Unlit/Color");
+                if (shader == null)
+                    shader = Shader.Find("Standard");
+                if (shader != null)
+                {
+                    Material mat = new Material(shader);
+                    Color green = new Color(0.2f, 1f, 0.35f, 0.35f);
+                    if (mat.HasProperty("_BaseColor"))
+                        mat.SetColor("_BaseColor", green);
+                    if (mat.HasProperty("_Color"))
+                        mat.SetColor("_Color", green);
+                    mat.renderQueue = 3000;
+                    mr.sharedMaterial = mat;
+                }
+            }
+        }
 
         Level2ExitTrigger trigger = exitMarker.AddComponent<Level2ExitTrigger>();
         trigger.flow = this;

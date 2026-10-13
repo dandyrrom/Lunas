@@ -59530,7 +59530,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &870859335
 Transform:
   m_ObjectHideFlags: 0
@@ -76388,6 +76388,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab7cb86da01e46b9b0eb23f27225909c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Level2GameFlow
+  escapeMode: 1
+  spawnAmbushHorde: 1
   objectiveText: {fileID: 0}
   goalText: {fileID: 0}
   beatObjectiveOnStart: 1
@@ -89065,7 +89067,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1289273699
 Transform:
   m_ObjectHideFlags: 0
@@ -92694,7 +92696,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1338940806
 Transform:
   m_ObjectHideFlags: 0
@@ -117165,7 +117167,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1642680225
 Transform:
   m_ObjectHideFlags: 0
@@ -127771,7 +127773,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1813137723
 Transform:
   m_ObjectHideFlags: 0

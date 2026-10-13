@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Trigger volume at the Level 2 exit marker. Only active after all aswangs are killed.
+/// Trigger volume at the Level 2 exit marker (boat / shore / gate).
+/// Open in escape mode from the start, or after kill-all Phase B.
 /// </summary>
 [RequireComponent(typeof(Collider))]
 public class Level2ExitTrigger : MonoBehaviour
@@ -29,7 +30,7 @@ public class Level2ExitTrigger : MonoBehaviour
 
     void TryFinish(Collider other)
     {
-        if (fired || flow == null || !flow.IsPhaseB)
+        if (fired || flow == null || !flow.IsExitOpen)
             return;
 
         if (other.GetComponentInParent<ThirdPersonController>() == null &&
