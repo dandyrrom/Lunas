@@ -60,20 +60,21 @@ public class Level2GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Scene loaded after SPACE on the end / game-over panel.")]
-    public string continueSceneName = "SplashScreen";
+    public string continueSceneName = "Level3";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(16f, 8f, 16f);
-    [Tooltip("Finish if she stands this close to the exit anchor / boat.")]
-    public float exitProximityRadius = 14f;
+    [Tooltip("Fallback trigger size; overridden to fit the shore boat at start.")]
+    public Vector3 exitTriggerSize = new Vector3(4f, 3f, 6f);
+    [Tooltip("Unused for finish now — kept for inspector compatibility. Finish is boat-hull only.")]
+    public float exitProximityRadius = 2f;
     [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
     public bool showExitMarkerVisually = false;
     [Tooltip("At start, move Level2ExitAnchor onto the nearest boat mesh.")]
     public bool snapExitAnchorToBoat = true;
-    [Tooltip("Also finish when she stands inside/near any object named like a boat.")]
+    [Tooltip("Finish only when she stands inside the preferred shore boat hull.")]
     public bool finishWhenStandingInBoat = true;
-    [Tooltip("Extra padding around boat mesh bounds when testing if she is standing in it.")]
-    public float boatBoundsPadding = 2.5f;
+    [Tooltip("Tiny padding around the shore boat mesh (keep small so nearby paths don't finish).")]
+    public float boatBoundsPadding = 0.35f;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
@@ -272,15 +273,15 @@ public class Level2GameFlow : MonoBehaviour
         Bounds b = GetBoatBounds(preferredBoat);
         Vector3 p = b.center;
         // Keep the trigger centered on the deck, slightly above the hull floor.
-        p.y = Mathf.Max(b.min.y + 1.5f, b.center.y);
+        p.y = Mathf.Max(b.min.y + 1.25f, b.center.y);
         exitAnchor.position = p;
 
-        // Fit the invisible trigger to this boat so walking onto the ribs always hits it.
-        float pad = Mathf.Max(2f, boatBoundsPadding);
+        // Tight trigger = boat hull only (small pad). Paths beside the boat must not finish.
+        float pad = Mathf.Max(0.2f, boatBoundsPadding);
         exitTriggerSize = new Vector3(
-            Mathf.Max(exitTriggerSize.x, b.size.x + pad * 2f),
-            Mathf.Max(exitTriggerSize.y, b.size.y + pad * 2f),
-            Mathf.Max(exitTriggerSize.z, b.size.z + pad * 2f));
+            Mathf.Clamp(b.size.x + pad * 2f, 2.5f, 8f),
+            Mathf.Clamp(b.size.y + pad * 2f, 2f, 5f),
+            Mathf.Clamp(b.size.z + pad * 2f, 3f, 10f));
 
         Debug.Log($"Level2GameFlow: exit snapped to boat '{preferredBoat.name}' at {exitAnchor.position}, trigger {exitTriggerSize}");
     }
@@ -360,74 +361,65 @@ public class Level2GameFlow : MonoBehaviour
         UpdateGoalBeat();
         TryFinishByProximity();
 
-        if (!waitingForSpace || Keyboard.current == null)
+        if (!waitingForSpace)
             return;
 
-        if (!Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (!WasContinuePressed())
             return;
 
         waitingForSpace = false;
         StartCoroutine(ContinueRoutine());
     }
 
+    static bool WasContinuePressed()
+    {
+        if (Keyboard.current != null &&
+            (Keyboard.current.spaceKey.wasPressedThisFrame ||
+             Keyboard.current.enterKey.wasPressedThisFrame))
+            return true;
+
+        // Fallback when the Input System keyboard device is missing / Game view unfocused briefly.
+        return UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
+               UnityEngine.Input.GetKeyDown(KeyCode.Return);
+    }
+
     void TryFinishByProximity()
     {
-        if (!IsExitOpen || panelOpen)
+        if (!IsExitOpen || panelOpen || !finishWhenStandingInBoat)
             return;
 
         if (!TryGetPlayerPosition(out Vector3 playerPos))
             return;
 
-        Transform anchor = exitAnchor != null
-            ? exitAnchor
-            : (exitMarker != null ? exitMarker.transform : null);
-        if (anchor != null)
-        {
-            Vector3 flatPlayer = playerPos;
-            Vector3 flatAnchor = anchor.position;
-            flatPlayer.y = 0f;
-            flatAnchor.y = 0f;
-            if (Vector3.Distance(flatPlayer, flatAnchor) <= exitProximityRadius &&
-                Mathf.Abs(playerPos.y - anchor.position.y) <= 6f)
-            {
-                NotifyExitReached();
-                return;
-            }
-        }
-
-        if (!finishWhenStandingInBoat)
+        if (preferredBoat == null)
+            preferredBoat = FindPreferredBoat();
+        if (preferredBoat == null)
             return;
 
-        if (boatRenderers.Count == 0)
-            CacheBoatGoals();
+        // Strict: only the shore goal boat hull. Nearby paths / other boats do not finish.
+        Bounds b = GetBoatBounds(preferredBoat);
+        b.Expand(Mathf.Max(0.05f, boatBoundsPadding) * 2f);
 
-        // Standing in/on the wooden hull itself finishes — use mesh bounds, not just the pivot.
-        for (int i = 0; i < boatRenderers.Count; i++)
+        Vector3 chest = playerPos + Vector3.up * 1.0f;
+        if (b.Contains(playerPos) || b.Contains(chest))
         {
-            Renderer r = boatRenderers[i];
-            if (r == null)
-                continue;
+            NotifyExitReached();
+            return;
+        }
 
-            Bounds b = r.bounds;
-            b.Expand(boatBoundsPadding * 2f);
-            if (b.Contains(playerPos) || b.Contains(playerPos + Vector3.up * 1.2f))
-            {
-                NotifyExitReached();
-                return;
-            }
-
-            Vector3 flatPlayer = playerPos;
-            Vector3 flatCenter = b.center;
-            flatPlayer.y = 0f;
-            flatCenter.y = 0f;
-            float planarRadius = 0.5f * Mathf.Max(b.size.x, b.size.z) + boatBoundsPadding;
-            if (Vector3.Distance(flatPlayer, flatCenter) <= planarRadius &&
-                playerPos.y >= b.min.y - 1f &&
-                playerPos.y <= b.max.y + 3f)
-            {
-                NotifyExitReached();
-                return;
-            }
+        // Slight planar forgiveness still clamped to this boat's footprint (not a village-wide radius).
+        Vector3 flatPlayer = playerPos;
+        Vector3 flatCenter = b.center;
+        flatPlayer.y = 0f;
+        flatCenter.y = 0f;
+        float halfX = b.extents.x;
+        float halfZ = b.extents.z;
+        if (Mathf.Abs(flatPlayer.x - flatCenter.x) <= halfX &&
+            Mathf.Abs(flatPlayer.z - flatCenter.z) <= halfZ &&
+            playerPos.y >= b.min.y - 0.5f &&
+            playerPos.y <= b.max.y + 2f)
+        {
+            NotifyExitReached();
         }
     }
 
@@ -699,10 +691,21 @@ public class Level2GameFlow : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
-        if (!string.IsNullOrWhiteSpace(continueSceneName))
-            SceneManager.LoadScene(continueSceneName);
-        else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        string sceneName = string.IsNullOrWhiteSpace(continueSceneName)
+            ? SceneManager.GetActiveScene().name
+            : continueSceneName.Trim();
+
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError(
+                $"Level2GameFlow: cannot load '{sceneName}'. " +
+                "Add that scene in File → Build Settings (and spell the name exactly).");
+            waitingForSpace = true;
+            yield break;
+        }
+
+        Debug.Log($"Level2GameFlow: loading scene '{sceneName}'");
+        SceneManager.LoadScene(sceneName);
     }
 
     void FreezeGameplay(bool freeze)
