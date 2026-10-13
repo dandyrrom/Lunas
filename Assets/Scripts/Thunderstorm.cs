@@ -169,6 +169,35 @@ public class Thunderstorm : MonoBehaviour
         onBlackout?.Invoke();
     }
 
+    public void ClearAfter(float delay)
+    {
+        StartCoroutine(ClearRoutine(delay));
+    }
+
+    IEnumerator ClearRoutine(float delay)
+    {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        EndStorm();
+    }
+
+    public void EndStorm()
+    {
+        blackoutActive = false;
+
+        if (thunderSource != null)
+            thunderSource.Stop();
+
+        level = 1f;
+        bakedLightingOn = false;
+        Apply(1f);
+
+        GameObject rain = GameObject.Find("PF_RainVFX_Group");
+        if (rain != null)
+            rain.SetActive(false);
+    }
+
     void Update()
     {
         if (!blackoutActive)

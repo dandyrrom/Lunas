@@ -21,11 +21,16 @@ public class ZombieHealth : MonoBehaviour
     ZombieHitIndicator indicator;
     bool candleBurning;
     bool deathStarted;
+    bool candleIsFatal = true;
+    bool countsTowardScore = true;
+    int candleDamage = 4;
     GameObject activeCandleFire;
 
     public int CurrentHealth => currentHealth;
+    public int MaxHealth => maxHealth;
     public bool IsDead => currentHealth <= 0;
 
+    public event System.Action<int, int> OnHealthChanged;
     public static event System.Action OnDied;
 
     static readonly int DieHash = Animator.StringToHash("Die");
@@ -38,6 +43,17 @@ public class ZombieHealth : MonoBehaviour
             indicator = gameObject.AddComponent<ZombieHitIndicator>();
     }
 
+    public void ConfigureAsBoss(int health, int candleHit)
+    {
+        candleIsFatal = false;
+        countsTowardScore = false;
+        candleDamage = Mathf.Max(1, candleHit);
+        maxHealth = Mathf.Max(1, health);
+        currentHealth = maxHealth;
+        candleBurning = false;
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
     public void TakeDamage(int amount)
     {
         if (IsDead || candleBurning || amount <= 0)
@@ -45,6 +61,7 @@ public class ZombieHealth : MonoBehaviour
 
         currentHealth = Mathf.Max(0, currentHealth - amount);
         indicator?.Flash();
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
         if (IsDead)
         {
@@ -63,6 +80,14 @@ public class ZombieHealth : MonoBehaviour
     {
         if (IsDead || candleBurning)
             return;
+
+        if (!candleIsFatal)
+        {
+            TakeDamage(candleDamage);
+            if (!IsDead)
+                StartCoroutine(CandlePop(fireVfxPrefab));
+            return;
+        }
 
         candleBurning = true;
         currentHealth = 0;
@@ -169,6 +194,13 @@ public class ZombieHealth : MonoBehaviour
         ExtinguishCandleFire();
     }
 
+    IEnumerator CandlePop(GameObject fireVfxPrefab)
+    {
+        SpawnFireVfx(fireVfxPrefab);
+        yield return new WaitForSeconds(0.45f);
+        ExtinguishCandleFire();
+    }
+
     void Die()
     {
         if (deathStarted)
@@ -204,9 +236,17 @@ public class ZombieHealth : MonoBehaviour
             agent.enabled = false;
 
         ZombieKillScore score = FindFirstObjectByType<ZombieKillScore>();
-        score?.RegisterKill();
+        if (countsTowardScore)
+            score?.RegisterKill();
 
         OnDied?.Invoke();
+
+        ZombieBoss boss = GetComponent<ZombieBoss>();
+        if (boss != null)
+        {
+            boss.OnDefeated();
+            return;
+        }
 
         Destroy(gameObject, deathDestroyDelay);
     }

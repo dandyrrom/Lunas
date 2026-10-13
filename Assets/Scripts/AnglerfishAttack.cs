@@ -27,6 +27,11 @@ public class AnglerfishAttack : MonoBehaviour
     public float contactSlack = 0.35f;
     public int damage = 60;
 
+    [Header("Audio")]
+    public AudioClip flyClip;
+    [Range(0f, 1f)]
+    public float flyVolume = 1f;
+
     public bool IsFlying => flights.Count > 0;
 
     readonly List<Flight> flights = new List<Flight>();
@@ -48,6 +53,7 @@ public class AnglerfishAttack : MonoBehaviour
         public float delay;
         public bool launched;
         public bool hit;
+        public AudioSource flySource;
     }
 
     void Awake()
@@ -102,6 +108,44 @@ public class AnglerfishAttack : MonoBehaviour
         }
     }
 
+    public void LaunchOne()
+    {
+        ResolveFish();
+        if (fish == null || launchPoints == null || launchPoints.Length == 0)
+            return;
+
+        if (FindAnyObjectByType<ThirdPersonController>() == null)
+            return;
+
+        PrepareTemplate();
+
+        Transform marker = null;
+        int offset = Random.Range(0, launchPoints.Length);
+        for (int i = 0; i < launchPoints.Length; i++)
+        {
+            Transform candidate = launchPoints[(offset + i) % launchPoints.Length];
+            if (candidate == null)
+                continue;
+
+            marker = candidate;
+            break;
+        }
+
+        if (marker == null)
+            return;
+
+        GameObject copy = Instantiate(fish.gameObject);
+        copy.name = "anglerfish minion";
+        copy.SetActive(false);
+
+        flights.Add(new Flight
+        {
+            body = copy.transform,
+            marker = marker,
+            delay = 0f
+        });
+    }
+
     void Update()
     {
         for (int i = flights.Count - 1; i >= 0; i--)
@@ -147,7 +191,20 @@ public class AnglerfishAttack : MonoBehaviour
                 Destroy(flight.lure.gameObject);
             Destroy(flight.body.gameObject);
             flights.RemoveAt(i);
+            if (flights.Count == 0 && !bossRevealed)
+            {
+                bossRevealed = true;
+                RevealBoss();
+            }
         }
+    }
+
+    bool bossRevealed;
+
+    void RevealBoss()
+    {
+        ZombieBoss boss = FindAnyObjectByType<ZombieBoss>(FindObjectsInactive.Include);
+        boss?.Appear();
     }
 
     void BeginFlight(Flight flight)
@@ -185,6 +242,26 @@ public class AnglerfishAttack : MonoBehaviour
         flight.lure.transform.position = flight.start;
         flight.previous = flight.start;
         flight.launched = true;
+        StartFlySound(flight);
+    }
+
+    void StartFlySound(Flight flight)
+    {
+        if (flyClip == null || flight.body == null)
+            return;
+
+        AudioSource source = flight.body.gameObject.AddComponent<AudioSource>();
+        source.clip = flyClip;
+        source.loop = true;
+        source.playOnAwake = false;
+        source.spatialBlend = 0.15f;
+        source.volume = 1f;
+        source.minDistance = 30f;
+        source.maxDistance = 100f;
+        source.rolloffMode = AudioRolloffMode.Logarithmic;
+        source.dopplerLevel = 0f;
+        source.Play();
+        flight.flySource = source;
     }
 
     void ResolveFish()

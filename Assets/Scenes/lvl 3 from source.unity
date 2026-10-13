@@ -10889,7 +10889,7 @@ MonoBehaviour:
   firstInterval: 10
   intervalStep: 1.5
   minimumInterval: 4.5
-  killsToStop: 5
+  killsToStop: 1
   clearFireVfx: {fileID: 8295591563862043295, guid: 98c5ce036f68d8941922e7541fb70887, type: 3}
   anglerfish: {fileID: 668433548}
   secondsAfterBlackout: 10
@@ -10923,7 +10923,9 @@ MonoBehaviour:
   aimHeight: 1.2
   flyThroughTime: 0.35
   contactSlack: 0.35
-  damage: 50
+  damage: 1
+  flyClip: {fileID: 8300000, guid: bdbd28dddde3dc44b909dedaefa86740, type: 3}
+  flyVolume: 1
 --- !u!4 &670582226 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 436916, guid: 287711fb95cdc004b814e53a055b4b1e, type: 3}
@@ -17651,63 +17653,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: 2b120c828398db5439578c6f50bef162, type: 3}
   m_PrefabInstance: {fileID: 427169555}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1008210870
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 24.32651
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 9.878002
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 40.675816
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.8660259
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0.49999917
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: -60
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
-      propertyPath: m_Name
-      value: Ch33_nonPBR
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: daf7142670ba1de4ab9c0cdf5fdebecf, type: 3}
 --- !u!4 &1008935049 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: d76a78a721a5d9d499abc8aec19fdc8b, type: 3}
@@ -19202,7 +19147,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 10.61
+      value: 17.15
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
       propertyPath: m_LocalPosition.y
@@ -19210,7 +19155,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 51.19
+      value: 46.98
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
       propertyPath: m_LocalRotation.w
@@ -19247,8 +19192,44 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1086584545}
   m_SourcePrefab: {fileID: 100100000, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
+--- !u!1 &1086584544 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8b3262bdbdc4a6248974042a51e8b052, type: 3}
+  m_PrefabInstance: {fileID: 1086584543}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1086584545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086584544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a91c4e7b2d8f4a6e9c0b1d3f5a7e8c24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ZombieBoss
+  breathingIdle: {fileID: -203655887218126122, guid: 9dcc9f4a09471134bb2194814040f6af, type: 3}
+  scream: {fileID: -203655887218126122, guid: 12b7f0909ec7a014895fa37120090694, type: 3}
+  agonizing: {fileID: -203655887218126122, guid: b1c41347bd46a2842ae150a2aee23d47, type: 3}
+  deathClip: {fileID: -203655887218126122, guid: c979087c2d38a544d9094e83796cfbf4, type: 3}
+  idleGap: 1.2
+  maxHealth: 20
+  candleDamage: 4
+  barHeight: 5.2
+  relocateEvery: 14
+  relocateRadius: 20
+  minMoveDistance: 7
+  hitClip: {fileID: 8300000, guid: eee0d17ae7b5d8f4b955ccb3758c6f11, type: 3}
+  clearDelay: 3
+  minionFirstInterval: 5
+  minionIntervalStep: 1.5
+  minionMinimumInterval: 4.5
 --- !u!4 &1091323445 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 472690, guid: ad8fe0235a8670d4c83f451033ac0a20, type: 3}
@@ -39660,4 +39641,3 @@ SceneRoots:
   - {fileID: 910010508}
   - {fileID: 910010510}
   - {fileID: 1086584543}
-  - {fileID: 1008210870}

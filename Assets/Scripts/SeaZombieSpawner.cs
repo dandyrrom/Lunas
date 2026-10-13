@@ -116,6 +116,45 @@ public class SeaZombieSpawner : MonoBehaviour
         anglerfish?.Launch(firstInterval, intervalStep, minimumInterval);
     }
 
+    public void SpawnOne()
+    {
+        if (waterZombiePrefab == null || spawnPoints == null || spawnPoints.Length == 0)
+            return;
+
+        Transform marker = null;
+        int offset = Random.Range(0, spawnPoints.Length);
+        for (int i = 0; i < spawnPoints.Length; i++)
+        {
+            Transform candidate = spawnPoints[(offset + i) % spawnPoints.Length];
+            if (candidate == null)
+                continue;
+
+            marker = candidate;
+            break;
+        }
+
+        if (marker == null)
+            return;
+
+        GameObject zombie = Instantiate(waterZombiePrefab);
+        zombie.SetActive(true);
+        zombie.transform.SetPositionAndRotation(marker.position, marker.rotation);
+    }
+
+    public void BurnRemaining()
+    {
+        ZombieHealth[] zombies = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None);
+        foreach (ZombieHealth zombie in zombies)
+        {
+            if (zombie == null || zombie.IsDead)
+                continue;
+            if (zombie.GetComponent<ZombieBoss>() != null)
+                continue;
+
+            zombie.KillByCandleFire(clearFireVfx);
+        }
+    }
+
     IEnumerator SpawnLoop()
     {
         if (startDelay > 0f)
