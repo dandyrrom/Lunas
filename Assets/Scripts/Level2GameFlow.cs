@@ -81,9 +81,6 @@ public class Level2GameFlow : MonoBehaviour
     {
         Instance = this;
 
-        // Run before ZombieKillScore.Start so extras count toward the objective.
-        EnsureModestHarderEncounters();
-
         if (killScore == null)
             killScore = FindFirstObjectByType<ZombieKillScore>();
         if (lives == null)
@@ -119,44 +116,6 @@ public class Level2GameFlow : MonoBehaviour
         bellSource.spatialBlend = 0f;
         bellSource.loop = true;
         bellSource.volume = churchBellVolume;
-    }
-
-    /// <summary>
-    /// Level2 only: if fewer than 9 aswangs are placed, spawn up to 2 extras at fixed spots.
-    /// Skips when the scene already has 9+ (e.g. after the editor harder pass).
-    /// </summary>
-    void EnsureModestHarderEncounters()
-    {
-        ZombieRoam[] existing = FindObjectsByType<ZombieRoam>(FindObjectsSortMode.None);
-        if (existing == null || existing.Length == 0 || existing.Length >= 9)
-            return;
-
-        Vector3[] spots =
-        {
-            new Vector3(-42f, 5.5f, 18f),
-            new Vector3(-72f, 3.2f, -42f),
-        };
-
-        int need = Mathf.Min(spots.Length, 9 - existing.Length);
-        for (int i = 0; i < need; i++)
-        {
-            ZombieRoam template = existing[i % existing.Length];
-            if (template == null)
-                continue;
-
-            GameObject clone = Instantiate(template.gameObject, spots[i], template.transform.rotation);
-            clone.name = template.name + $" (L2Harder {i + 1})";
-
-            ZombieRoam roam = clone.GetComponent<ZombieRoam>();
-            if (roam == null)
-                continue;
-
-            roam.chaseSpeed = 0.65f;
-            roam.hitRunSpeed = 0.7f;
-            roam.screamAlertRadius = 28f;
-            roam.breathingRange = 1.25f;
-            roam.attackDamage = 12;
-        }
     }
 
     void OnDestroy()

@@ -40,7 +40,7 @@ public static class Level2HarderPass
         int changes = 0;
         changes += ApplyNightLook();
         changes += TuneAswangs();
-        changes += EnsureExtraAswangs();
+        // Do not auto-spawn extras — scene aswang count is authored in Level2.
         changes += FixRespawnPads();
         changes += WireFlowAndTexts();
         changes += PlaceExitAnchor();
