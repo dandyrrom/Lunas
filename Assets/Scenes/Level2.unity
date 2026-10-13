@@ -76407,9 +76407,11 @@ MonoBehaviour:
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: SplashScreen
-  exitTriggerSize: {x: 8, y: 4, z: 8}
-  exitProximityRadius: 4
+  exitTriggerSize: {x: 10, y: 5, z: 10}
+  exitProximityRadius: 6
   showExitMarkerVisually: 0
+  snapExitAnchorToBoat: 1
+  finishWhenStandingInBoat: 1
   killScore: {fileID: 0}
   lives: {fileID: 0}
   runStats: {fileID: 0}
@@ -84359,7 +84361,7 @@ Transform:
   m_GameObject: {fileID: 1221849190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -95, y: 3.5, z: -18}
+  m_LocalPosition: {x: -73.84, y: 3.5, z: 33.53}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

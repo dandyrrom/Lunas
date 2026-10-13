@@ -63,11 +63,15 @@ public class Level2GameFlow : MonoBehaviour
     public string continueSceneName = "SplashScreen";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(8f, 4f, 8f);
-    [Tooltip("Also finish if she stands this close to the exit anchor during Phase B.")]
-    public float exitProximityRadius = 4f;
+    public Vector3 exitTriggerSize = new Vector3(10f, 5f, 10f);
+    [Tooltip("Finish if she stands this close to the exit anchor / boat.")]
+    public float exitProximityRadius = 6f;
     [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
     public bool showExitMarkerVisually = false;
+    [Tooltip("At start, move Level2ExitAnchor onto the nearest boat mesh.")]
+    public bool snapExitAnchorToBoat = true;
+    [Tooltip("Also finish when she stands inside/near any object named like a boat.")]
+    public bool finishWhenStandingInBoat = true;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
