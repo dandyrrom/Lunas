@@ -63,15 +63,17 @@ public class Level2GameFlow : MonoBehaviour
     public string continueSceneName = "SplashScreen";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(10f, 5f, 10f);
+    public Vector3 exitTriggerSize = new Vector3(16f, 8f, 16f);
     [Tooltip("Finish if she stands this close to the exit anchor / boat.")]
-    public float exitProximityRadius = 6f;
+    public float exitProximityRadius = 14f;
     [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
     public bool showExitMarkerVisually = false;
     [Tooltip("At start, move Level2ExitAnchor onto the nearest boat mesh.")]
     public bool snapExitAnchorToBoat = true;
     [Tooltip("Also finish when she stands inside/near any object named like a boat.")]
     public bool finishWhenStandingInBoat = true;
+    [Tooltip("Extra padding around boat mesh bounds when testing if she is standing in it.")]
+    public float boatBoundsPadding = 2.5f;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
@@ -93,6 +95,8 @@ public class Level2GameFlow : MonoBehaviour
     bool beatingObjective;
     bool beatingGoal;
     Coroutine objectiveIntroRoutine;
+    readonly System.Collections.Generic.List<Renderer> boatRenderers = new System.Collections.Generic.List<Renderer>(16);
+    Transform preferredBoat;
 
     Vector3 objectiveBaseScale = Vector3.one;
     Color objectiveBaseColor = Color.white;
@@ -181,6 +185,9 @@ public class Level2GameFlow : MonoBehaviour
     void Start()
     {
         BuildEndPanelIfNeeded();
+        CacheBoatGoals();
+        if (snapExitAnchorToBoat)
+            SnapExitAnchorToNearestBoat();
         SetupExitMarker();
         ShowPhaseATexts();
         CacheObjectiveVisuals();
@@ -207,6 +214,127 @@ public class Level2GameFlow : MonoBehaviour
         if (objectiveIntroRoutine != null)
             StopCoroutine(objectiveIntroRoutine);
         objectiveIntroRoutine = StartCoroutine(ObjectiveIntroRoutine());
+    }
+
+    void CacheBoatGoals()
+    {
+        boatRenderers.Clear();
+        preferredBoat = null;
+        float bestScore = float.NegativeInfinity;
+        Vector3 hint = exitAnchor != null
+            ? exitAnchor.position
+            : new Vector3(-74f, 2.5f, 34f);
+
+        foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (r == null || !IsBoatTransform(r.transform))
+                continue;
+
+            // Skip empty organizer parents named "Boats" with no real mesh volume.
+            if (r.bounds.size.sqrMagnitude < 0.01f)
+                continue;
+
+            boatRenderers.Add(r);
+
+            Transform t = r.transform;
+            float dist = Vector3.Distance(r.bounds.center, hint);
+            int depth = 0;
+            for (Transform p = t.parent; p != null && depth < 8; p = p.parent)
+                depth++;
+
+            float score = -dist - depth * 2f;
+            string n = t.name.ToLowerInvariant();
+            if (n.Contains("build_boat") || n.Contains("pf_build_boat"))
+                score += 12f;
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                preferredBoat = t;
+            }
+        }
+
+        if (preferredBoat != null)
+            Debug.Log($"Level2GameFlow: preferred boat '{preferredBoat.name}' ({boatRenderers.Count} boat meshes cached)");
+    }
+
+    void SnapExitAnchorToNearestBoat()
+    {
+        EnsureExitAnchorReference();
+        if (exitAnchor == null)
+            return;
+
+        if (preferredBoat == null)
+            preferredBoat = FindPreferredBoat();
+        if (preferredBoat == null)
+            return;
+
+        Bounds b = GetBoatBounds(preferredBoat);
+        Vector3 p = b.center;
+        // Keep the trigger centered on the deck, slightly above the hull floor.
+        p.y = Mathf.Max(b.min.y + 1.5f, b.center.y);
+        exitAnchor.position = p;
+
+        // Fit the invisible trigger to this boat so walking onto the ribs always hits it.
+        float pad = Mathf.Max(2f, boatBoundsPadding);
+        exitTriggerSize = new Vector3(
+            Mathf.Max(exitTriggerSize.x, b.size.x + pad * 2f),
+            Mathf.Max(exitTriggerSize.y, b.size.y + pad * 2f),
+            Mathf.Max(exitTriggerSize.z, b.size.z + pad * 2f));
+
+        Debug.Log($"Level2GameFlow: exit snapped to boat '{preferredBoat.name}' at {exitAnchor.position}, trigger {exitTriggerSize}");
+    }
+
+    void EnsureExitAnchorReference()
+    {
+        if (exitAnchor != null)
+            return;
+
+        GameObject named = GameObject.Find("Level2ExitAnchor");
+        if (named != null)
+            exitAnchor = named.transform;
+    }
+
+    Transform FindPreferredBoat()
+    {
+        if (preferredBoat != null)
+            return preferredBoat;
+
+        CacheBoatGoals();
+        return preferredBoat;
+    }
+
+    static Bounds GetBoatBounds(Transform boat)
+    {
+        Renderer[] renderers = boat.GetComponentsInChildren<Renderer>();
+        if (renderers == null || renderers.Length == 0)
+            return new Bounds(boat.position, Vector3.one * 4f);
+
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                b.Encapsulate(renderers[i].bounds);
+        }
+
+        return b;
+    }
+
+    static bool IsBoatTransform(Transform t)
+    {
+        if (t == null)
+            return false;
+
+        string n = t.name.ToLowerInvariant();
+        // Ignore organizer empties like "Boats" / "boats_group".
+        if (n == "boats" || n == "boat" || n.EndsWith("_boats"))
+            return false;
+
+        return n.Contains("build_boat")
+            || n.Contains("pf_build_boat")
+            || n.Contains("banca")
+            || n.Contains("canoe")
+            || (n.Contains("boat") && t.GetComponentInChildren<Renderer>() != null);
     }
 
     void ApplyEscapeObjectiveCopy()
@@ -247,18 +375,87 @@ public class Level2GameFlow : MonoBehaviour
         if (!IsExitOpen || panelOpen)
             return;
 
+        if (!TryGetPlayerPosition(out Vector3 playerPos))
+            return;
+
         Transform anchor = exitAnchor != null
             ? exitAnchor
             : (exitMarker != null ? exitMarker.transform : null);
-        if (anchor == null)
+        if (anchor != null)
+        {
+            Vector3 flatPlayer = playerPos;
+            Vector3 flatAnchor = anchor.position;
+            flatPlayer.y = 0f;
+            flatAnchor.y = 0f;
+            if (Vector3.Distance(flatPlayer, flatAnchor) <= exitProximityRadius &&
+                Mathf.Abs(playerPos.y - anchor.position.y) <= 6f)
+            {
+                NotifyExitReached();
+                return;
+            }
+        }
+
+        if (!finishWhenStandingInBoat)
             return;
 
+        if (boatRenderers.Count == 0)
+            CacheBoatGoals();
+
+        // Standing in/on the wooden hull itself finishes — use mesh bounds, not just the pivot.
+        for (int i = 0; i < boatRenderers.Count; i++)
+        {
+            Renderer r = boatRenderers[i];
+            if (r == null)
+                continue;
+
+            Bounds b = r.bounds;
+            b.Expand(boatBoundsPadding * 2f);
+            if (b.Contains(playerPos) || b.Contains(playerPos + Vector3.up * 1.2f))
+            {
+                NotifyExitReached();
+                return;
+            }
+
+            Vector3 flatPlayer = playerPos;
+            Vector3 flatCenter = b.center;
+            flatPlayer.y = 0f;
+            flatCenter.y = 0f;
+            float planarRadius = 0.5f * Mathf.Max(b.size.x, b.size.z) + boatBoundsPadding;
+            if (Vector3.Distance(flatPlayer, flatCenter) <= planarRadius &&
+                playerPos.y >= b.min.y - 1f &&
+                playerPos.y <= b.max.y + 3f)
+            {
+                NotifyExitReached();
+                return;
+            }
+        }
+    }
+
+    static bool TryGetPlayerPosition(out Vector3 playerPos)
+    {
         ThirdPersonController player = FindFirstObjectByType<ThirdPersonController>();
-        if (player == null)
-            return;
+        if (player != null)
+        {
+            playerPos = player.transform.position;
+            return true;
+        }
 
-        if (Vector3.Distance(player.transform.position, anchor.position) <= exitProximityRadius)
-            NotifyExitReached();
+        CharacterController cc = FindFirstObjectByType<CharacterController>();
+        if (cc != null)
+        {
+            playerPos = cc.transform.position;
+            return true;
+        }
+
+        GameObject named = GameObject.Find("Player");
+        if (named != null)
+        {
+            playerPos = named.transform.position;
+            return true;
+        }
+
+        playerPos = default;
+        return false;
     }
 
     void HandleScoreChanged(int killed, int total)
@@ -669,7 +866,28 @@ public class Level2GameFlow : MonoBehaviour
     void BuildEndPanelIfNeeded()
     {
         if (hudCanvas == null)
-            return;
+        {
+            GameObject hud = GameObject.Find("HUD");
+            if (hud != null)
+                hudCanvas = hud.GetComponent<Canvas>();
+        }
+
+        // Always show the victory / game-over panel even if the HUD canvas is missing.
+        if (hudCanvas == null)
+        {
+            GameObject canvasGo = new GameObject(
+                "Level2EndCanvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
+            hudCanvas = canvasGo.GetComponent<Canvas>();
+            hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            hudCanvas.sortingOrder = 500;
+            CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+        }
 
         TMP_FontAsset font = null;
         if (objectiveText != null && objectiveText.font != null)

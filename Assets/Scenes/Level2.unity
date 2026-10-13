@@ -76407,11 +76407,12 @@ MonoBehaviour:
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: SplashScreen
-  exitTriggerSize: {x: 10, y: 5, z: 10}
-  exitProximityRadius: 6
+  exitTriggerSize: {x: 16, y: 8, z: 16}
+  exitProximityRadius: 14
   showExitMarkerVisually: 0
   snapExitAnchorToBoat: 1
   finishWhenStandingInBoat: 1
+  boatBoundsPadding: 2.5
   killScore: {fileID: 0}
   lives: {fileID: 0}
   runStats: {fileID: 0}
