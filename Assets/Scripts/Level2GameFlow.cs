@@ -6,24 +6,41 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Level 2 objective flip: kill all aswangs → bell → reach swamp exit marker → end panel.
-/// Same loop as Level 1 on a tighter cemetery / swamp path. Level 3 is the finale later.
+/// Level 2 finals flow: escape the aswang village to the shore/boat exit → Level 3 port.
+/// Default is escape mode (exit open; kills optional). Kill-all mode still available if disabled.
 /// </summary>
 public class Level2GameFlow : MonoBehaviour
 {
     public static Level2GameFlow Instance { get; private set; }
 
     [Header("Objectives")]
-    [Tooltip("Phase A HUD text (Kill all aswangs).")]
+    [Tooltip("Intro / main objective text (e.g. reach the boat / port).")]
     public TMP_Text objectiveText;
-    [Tooltip("Phase B HUD text (reach the swamp exit).")]
+    [Tooltip("Optional secondary goal text.")]
     public TMP_Text goalText;
 
+    [Header("Escape mode")]
+    [Tooltip("If on: exit is open from the start; she does not need to kill all aswangs.")]
+    public bool escapeMode = true;
+    [Tooltip("Spawn a dense ambush horde at level start.")]
+    public bool spawnAmbushHorde = true;
+
     [Header("Objective intro (ObjectiveText)")]
-    [Tooltip("Beat ObjectiveText at level start to announce the objective, then hide it.")]
+    [Tooltip("Beat ObjectiveText at level start to announce the objective, then fade it out.")]
     public bool beatObjectiveOnStart = true;
-    [Tooltip("How many seconds ObjectiveText stays visible (beating), then disappears.")]
-    public float objectiveIntroDuration = 4f;
+    [Tooltip("How many seconds ObjectiveText stays fully visible before fading.")]
+    public float objectiveIntroDuration = 6.5f;
+    [Tooltip("How many seconds the objective text takes to fade out.")]
+    public float objectiveFadeOutDuration = 1.75f;
+
+    [Header("Escape narration (written into ObjectiveText at start)")]
+    [TextArea(2, 5)]
+    public string escapeObjectiveTitle = "Reach the boat at the shore";
+    [TextArea(3, 8)]
+    public string escapeObjectiveInstructions =
+        "The village is overrun — you don't need to kill them all.\n" +
+        "Sneak when you can. Running and jumping make noise.\n" +
+        "Use garlic and the candle to survive. Cut through to the boat.";
 
     [Header("Goal beat (GoalText / Phase B)")]
     public bool beatGoalInPhaseB = true;
@@ -46,7 +63,17 @@ public class Level2GameFlow : MonoBehaviour
     public string continueSceneName = "SplashScreen";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(3f, 3f, 3f);
+    public Vector3 exitTriggerSize = new Vector3(16f, 8f, 16f);
+    [Tooltip("Finish if she stands this close to the exit anchor / boat.")]
+    public float exitProximityRadius = 14f;
+    [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
+    public bool showExitMarkerVisually = false;
+    [Tooltip("At start, move Level2ExitAnchor onto the nearest boat mesh.")]
+    public bool snapExitAnchorToBoat = true;
+    [Tooltip("Also finish when she stands inside/near any object named like a boat.")]
+    public bool finishWhenStandingInBoat = true;
+    [Tooltip("Extra padding around boat mesh bounds when testing if she is standing in it.")]
+    public float boatBoundsPadding = 2.5f;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
@@ -68,6 +95,8 @@ public class Level2GameFlow : MonoBehaviour
     bool beatingObjective;
     bool beatingGoal;
     Coroutine objectiveIntroRoutine;
+    readonly System.Collections.Generic.List<Renderer> boatRenderers = new System.Collections.Generic.List<Renderer>(16);
+    Transform preferredBoat;
 
     Vector3 objectiveBaseScale = Vector3.one;
     Color objectiveBaseColor = Color.white;
@@ -76,10 +105,15 @@ public class Level2GameFlow : MonoBehaviour
 
     public bool IsPhaseB => phaseB;
     public bool IsPanelOpen => panelOpen;
+    /// <summary>Exit is usable in escape mode from the start, or after kill-all Phase B.</summary>
+    public bool IsExitOpen => escapeMode || phaseB;
 
     void Awake()
     {
         Instance = this;
+
+        if (spawnAmbushHorde)
+            EnsureAmbushHorde();
 
         if (killScore == null)
             killScore = FindFirstObjectByType<ZombieKillScore>();
@@ -118,6 +152,14 @@ public class Level2GameFlow : MonoBehaviour
         bellSource.volume = churchBellVolume;
     }
 
+    void EnsureAmbushHorde()
+    {
+        Level2AmbushSpawner spawner = GetComponent<Level2AmbushSpawner>();
+        if (spawner == null)
+            spawner = gameObject.AddComponent<Level2AmbushSpawner>();
+        spawner.SpawnHorde();
+    }
+
     void OnDestroy()
     {
         if (Instance == this)
@@ -143,21 +185,180 @@ public class Level2GameFlow : MonoBehaviour
     void Start()
     {
         BuildEndPanelIfNeeded();
+        CacheBoatGoals();
+        if (snapExitAnchorToBoat)
+            SnapExitAnchorToNearestBoat();
         SetupExitMarker();
         ShowPhaseATexts();
         CacheObjectiveVisuals();
-        if (exitMarker != null)
+
+        if (escapeMode)
+        {
+            // Escape gauntlet: exit is live immediately. Kills are optional pressure/score.
+            if (exitMarker != null)
+                exitMarker.SetActive(true);
+            phaseB = true;
+            beatingGoal = false;
+            CacheGoalVisuals();
+            if (goalText != null)
+                SetTextActive(goalText, false);
+            ApplyEscapeObjectiveCopy();
+        }
+        else if (exitMarker != null)
+        {
             exitMarker.SetActive(false);
+        }
+
+        CacheObjectiveVisuals();
 
         if (objectiveIntroRoutine != null)
             StopCoroutine(objectiveIntroRoutine);
         objectiveIntroRoutine = StartCoroutine(ObjectiveIntroRoutine());
     }
 
+    void CacheBoatGoals()
+    {
+        boatRenderers.Clear();
+        preferredBoat = null;
+        float bestScore = float.NegativeInfinity;
+        Vector3 hint = exitAnchor != null
+            ? exitAnchor.position
+            : new Vector3(-74f, 2.5f, 34f);
+
+        foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (r == null || !IsBoatTransform(r.transform))
+                continue;
+
+            // Skip empty organizer parents named "Boats" with no real mesh volume.
+            if (r.bounds.size.sqrMagnitude < 0.01f)
+                continue;
+
+            boatRenderers.Add(r);
+
+            Transform t = r.transform;
+            float dist = Vector3.Distance(r.bounds.center, hint);
+            int depth = 0;
+            for (Transform p = t.parent; p != null && depth < 8; p = p.parent)
+                depth++;
+
+            float score = -dist - depth * 2f;
+            string n = t.name.ToLowerInvariant();
+            if (n.Contains("build_boat") || n.Contains("pf_build_boat"))
+                score += 12f;
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                preferredBoat = t;
+            }
+        }
+
+        if (preferredBoat != null)
+            Debug.Log($"Level2GameFlow: preferred boat '{preferredBoat.name}' ({boatRenderers.Count} boat meshes cached)");
+    }
+
+    void SnapExitAnchorToNearestBoat()
+    {
+        EnsureExitAnchorReference();
+        if (exitAnchor == null)
+            return;
+
+        if (preferredBoat == null)
+            preferredBoat = FindPreferredBoat();
+        if (preferredBoat == null)
+            return;
+
+        Bounds b = GetBoatBounds(preferredBoat);
+        Vector3 p = b.center;
+        // Keep the trigger centered on the deck, slightly above the hull floor.
+        p.y = Mathf.Max(b.min.y + 1.5f, b.center.y);
+        exitAnchor.position = p;
+
+        // Fit the invisible trigger to this boat so walking onto the ribs always hits it.
+        float pad = Mathf.Max(2f, boatBoundsPadding);
+        exitTriggerSize = new Vector3(
+            Mathf.Max(exitTriggerSize.x, b.size.x + pad * 2f),
+            Mathf.Max(exitTriggerSize.y, b.size.y + pad * 2f),
+            Mathf.Max(exitTriggerSize.z, b.size.z + pad * 2f));
+
+        Debug.Log($"Level2GameFlow: exit snapped to boat '{preferredBoat.name}' at {exitAnchor.position}, trigger {exitTriggerSize}");
+    }
+
+    void EnsureExitAnchorReference()
+    {
+        if (exitAnchor != null)
+            return;
+
+        GameObject named = GameObject.Find("Level2ExitAnchor");
+        if (named != null)
+            exitAnchor = named.transform;
+    }
+
+    Transform FindPreferredBoat()
+    {
+        if (preferredBoat != null)
+            return preferredBoat;
+
+        CacheBoatGoals();
+        return preferredBoat;
+    }
+
+    static Bounds GetBoatBounds(Transform boat)
+    {
+        Renderer[] renderers = boat.GetComponentsInChildren<Renderer>();
+        if (renderers == null || renderers.Length == 0)
+            return new Bounds(boat.position, Vector3.one * 4f);
+
+        Bounds b = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+                b.Encapsulate(renderers[i].bounds);
+        }
+
+        return b;
+    }
+
+    static bool IsBoatTransform(Transform t)
+    {
+        if (t == null)
+            return false;
+
+        string n = t.name.ToLowerInvariant();
+        // Ignore organizer empties like "Boats" / "boats_group".
+        if (n == "boats" || n == "boat" || n.EndsWith("_boats"))
+            return false;
+
+        return n.Contains("build_boat")
+            || n.Contains("pf_build_boat")
+            || n.Contains("banca")
+            || n.Contains("canoe")
+            || (n.Contains("boat") && t.GetComponentInChildren<Renderer>() != null);
+    }
+
+    void ApplyEscapeObjectiveCopy()
+    {
+        if (objectiveText == null)
+            return;
+
+        string title = string.IsNullOrWhiteSpace(escapeObjectiveTitle)
+            ? "Reach the boat at the shore"
+            : escapeObjectiveTitle.Trim();
+        string body = string.IsNullOrWhiteSpace(escapeObjectiveInstructions)
+            ? string.Empty
+            : escapeObjectiveInstructions.Trim();
+
+        objectiveText.text = string.IsNullOrEmpty(body) ? title : (title + "\n\n" + body);
+        objectiveText.enableWordWrapping = true;
+        objectiveText.overflowMode = TextOverflowModes.Overflow;
+    }
+
     void Update()
     {
         UpdateObjectiveBeat();
         UpdateGoalBeat();
+        TryFinishByProximity();
 
         if (!waitingForSpace || Keyboard.current == null)
             return;
@@ -169,9 +370,97 @@ public class Level2GameFlow : MonoBehaviour
         StartCoroutine(ContinueRoutine());
     }
 
+    void TryFinishByProximity()
+    {
+        if (!IsExitOpen || panelOpen)
+            return;
+
+        if (!TryGetPlayerPosition(out Vector3 playerPos))
+            return;
+
+        Transform anchor = exitAnchor != null
+            ? exitAnchor
+            : (exitMarker != null ? exitMarker.transform : null);
+        if (anchor != null)
+        {
+            Vector3 flatPlayer = playerPos;
+            Vector3 flatAnchor = anchor.position;
+            flatPlayer.y = 0f;
+            flatAnchor.y = 0f;
+            if (Vector3.Distance(flatPlayer, flatAnchor) <= exitProximityRadius &&
+                Mathf.Abs(playerPos.y - anchor.position.y) <= 6f)
+            {
+                NotifyExitReached();
+                return;
+            }
+        }
+
+        if (!finishWhenStandingInBoat)
+            return;
+
+        if (boatRenderers.Count == 0)
+            CacheBoatGoals();
+
+        // Standing in/on the wooden hull itself finishes — use mesh bounds, not just the pivot.
+        for (int i = 0; i < boatRenderers.Count; i++)
+        {
+            Renderer r = boatRenderers[i];
+            if (r == null)
+                continue;
+
+            Bounds b = r.bounds;
+            b.Expand(boatBoundsPadding * 2f);
+            if (b.Contains(playerPos) || b.Contains(playerPos + Vector3.up * 1.2f))
+            {
+                NotifyExitReached();
+                return;
+            }
+
+            Vector3 flatPlayer = playerPos;
+            Vector3 flatCenter = b.center;
+            flatPlayer.y = 0f;
+            flatCenter.y = 0f;
+            float planarRadius = 0.5f * Mathf.Max(b.size.x, b.size.z) + boatBoundsPadding;
+            if (Vector3.Distance(flatPlayer, flatCenter) <= planarRadius &&
+                playerPos.y >= b.min.y - 1f &&
+                playerPos.y <= b.max.y + 3f)
+            {
+                NotifyExitReached();
+                return;
+            }
+        }
+    }
+
+    static bool TryGetPlayerPosition(out Vector3 playerPos)
+    {
+        ThirdPersonController player = FindFirstObjectByType<ThirdPersonController>();
+        if (player != null)
+        {
+            playerPos = player.transform.position;
+            return true;
+        }
+
+        CharacterController cc = FindFirstObjectByType<CharacterController>();
+        if (cc != null)
+        {
+            playerPos = cc.transform.position;
+            return true;
+        }
+
+        GameObject named = GameObject.Find("Player");
+        if (named != null)
+        {
+            playerPos = named.transform.position;
+            return true;
+        }
+
+        playerPos = default;
+        return false;
+    }
+
     void HandleScoreChanged(int killed, int total)
     {
-        if (phaseB || panelOpen)
+        if (escapeMode || phaseB || panelOpen)
             return;
 
         if (total <= 0 || killed < total)
@@ -217,21 +506,59 @@ public class Level2GameFlow : MonoBehaviour
             yield break;
 
         SetTextActive(objectiveText, true);
-        beatingObjective = beatObjectiveOnStart;
+        // Re-cache after escape copy is applied so fade restores the right base color.
+        CacheObjectiveVisuals();
+        Color startColor = objectiveBaseColor;
+        startColor.a = objectiveBaseColor.a <= 0.01f ? 1f : objectiveBaseColor.a;
+        objectiveBaseColor = startColor;
+        objectiveText.color = startColor;
 
-        float duration = Mathf.Max(0f, objectiveIntroDuration);
+        // Escape instructions stay steady so they're readable; optional pulse in kill-all mode.
+        beatingObjective = beatObjectiveOnStart && !escapeMode;
+
+        // In escape mode phaseB is already true (exit open) — still show the intro.
+        float hold = Mathf.Max(0f, objectiveIntroDuration);
         float elapsed = 0f;
-        while (elapsed < duration && !phaseB && !panelOpen)
+        while (elapsed < hold && !panelOpen && (escapeMode || !phaseB))
         {
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         beatingObjective = false;
-        RestoreObjectiveVisuals();
+        if (objectiveText != null)
+            objectiveText.rectTransform.localScale = objectiveBaseScale;
 
-        if (!phaseB && !panelOpen)
+        if (panelOpen)
+        {
+            objectiveIntroRoutine = null;
+            yield break;
+        }
+
+        // Soft fade out, then hide.
+        float fade = Mathf.Max(0.05f, objectiveFadeOutDuration);
+        elapsed = 0f;
+        Color from = objectiveText.color;
+        while (elapsed < fade && !panelOpen)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fade);
+            Color c = from;
+            c.a = Mathf.Lerp(from.a, 0f, t);
+            objectiveText.color = c;
+            yield return null;
+        }
+
+        if (!panelOpen)
+        {
             SetTextActive(objectiveText, false);
+            // Keep full alpha ready if something shows this text again later.
+            Color restored = objectiveBaseColor;
+            restored.a = startColor.a;
+            objectiveBaseColor = restored;
+            objectiveText.color = restored;
+            objectiveText.rectTransform.localScale = objectiveBaseScale;
+        }
 
         objectiveIntroRoutine = null;
     }
@@ -278,7 +605,7 @@ public class Level2GameFlow : MonoBehaviour
 
     public void NotifyExitReached()
     {
-        if (!phaseB || panelOpen)
+        if (!IsExitOpen || panelOpen)
             return;
 
         ShowEndPanel(victory: true);
@@ -321,27 +648,32 @@ public class Level2GameFlow : MonoBehaviour
             : 0;
 
         if (endTitleText != null)
-            endTitleText.text = victory ? "Level 2 Complete" : "Game Over";
+            endTitleText.text = victory ? "She reaches the boat" : "Taken by the night";
 
         if (endBodyText != null)
         {
             if (victory)
             {
                 endBodyText.text =
-                    $"Aswang killed: {killed}\n" +
+                    "Through the stolen village, she finds the shore.\n" +
+                    "The old boat waits — beyond the black water,\n" +
+                    "the sea port… and him.\n\n" +
+                    $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
-                    $"Remaining lives: {livesLeft}\n" +
-                    $"Total score: {totalScore}\n\n" +
-                    "Press SPACE to continue";
+                    $"Lives left: {livesLeft}\n" +
+                    $"Score: {totalScore}\n\n" +
+                    "Press SPACE — sail to the old sea port";
             }
             else
             {
                 endBodyText.text =
-                    $"Aswang killed: {killed}\n" +
+                    "The aswangs close in before she can reach the shore.\n" +
+                    "The boat drifts empty in the dark.\n\n" +
+                    $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
-                    $"Remaining lives: {livesLeft}\n" +
-                    $"Total score: {totalScore}\n\n" +
-                    "Press SPACE to continue";
+                    $"Lives left: {livesLeft}\n" +
+                    $"Score: {totalScore}\n\n" +
+                    "Press SPACE to try again";
             }
         }
 
@@ -503,11 +835,29 @@ public class Level2GameFlow : MonoBehaviour
 
         MeshRenderer mr = exitMarker.GetComponent<MeshRenderer>();
         if (mr != null)
-            mr.enabled = false;
-
-        MeshFilter mf = exitMarker.GetComponent<MeshFilter>();
-        if (mf != null)
-            Destroy(mf);
+        {
+            mr.enabled = showExitMarkerVisually;
+            if (showExitMarkerVisually)
+            {
+                // Unlit-ish translucent green so the verify exit is obvious.
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null)
+                    shader = Shader.Find("Unlit/Color");
+                if (shader == null)
+                    shader = Shader.Find("Standard");
+                if (shader != null)
+                {
+                    Material mat = new Material(shader);
+                    Color green = new Color(0.2f, 1f, 0.35f, 0.35f);
+                    if (mat.HasProperty("_BaseColor"))
+                        mat.SetColor("_BaseColor", green);
+                    if (mat.HasProperty("_Color"))
+                        mat.SetColor("_Color", green);
+                    mat.renderQueue = 3000;
+                    mr.sharedMaterial = mat;
+                }
+            }
+        }
 
         Level2ExitTrigger trigger = exitMarker.AddComponent<Level2ExitTrigger>();
         trigger.flow = this;
@@ -516,7 +866,28 @@ public class Level2GameFlow : MonoBehaviour
     void BuildEndPanelIfNeeded()
     {
         if (hudCanvas == null)
-            return;
+        {
+            GameObject hud = GameObject.Find("HUD");
+            if (hud != null)
+                hudCanvas = hud.GetComponent<Canvas>();
+        }
+
+        // Always show the victory / game-over panel even if the HUD canvas is missing.
+        if (hudCanvas == null)
+        {
+            GameObject canvasGo = new GameObject(
+                "Level2EndCanvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster));
+            hudCanvas = canvasGo.GetComponent<Canvas>();
+            hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            hudCanvas.sortingOrder = 500;
+            CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+        }
 
         TMP_FontAsset font = null;
         if (objectiveText != null && objectiveText.font != null)

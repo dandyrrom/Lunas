@@ -15,17 +15,17 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.14150941, g: 0.13283195, b: 0.13283195, a: 1}
+  m_FogColor: {r: 0.05, g: 0.06, b: 0.12, a: 1}
   m_FogMode: 1
   m_FogDensity: 1
-  m_LinearFogStart: 20
-  m_LinearFogEnd: 180
-  m_AmbientSkyColor: {r: 0.38086888, g: 0.4384824, b: 0.47843137, a: 1}
-  m_AmbientEquatorColor: {r: 0.75735295, g: 0.31741998, b: 0.31741998, a: 1}
-  m_AmbientGroundColor: {r: 0, g: 0.59052944, b: 1, a: 1}
-  m_AmbientIntensity: 0.23
+  m_LinearFogStart: 18
+  m_LinearFogEnd: 140
+  m_AmbientSkyColor: {r: 0.02, g: 0.03, b: 0.08, a: 1}
+  m_AmbientEquatorColor: {r: 0.015, g: 0.018, b: 0.03, a: 1}
+  m_AmbientGroundColor: {r: 0.008, g: 0.008, b: 0.012, a: 1}
+  m_AmbientIntensity: 0.32
   m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.28279638, g: 0.3139952, b: 0.38679248, a: 1}
+  m_SubtractiveShadowColor: {r: 0.05, g: 0.06, b: 0.1, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: 49559053c9d445039976a0a3e5a75d7b, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 5
-  m_ReflectionIntensity: 1
+  m_ReflectionIntensity: 0.4
   m_CustomReflection: {fileID: 8900000, guid: 545abe2b789631d42ba478c66371d77c, type: 2}
   m_Sun: {fileID: 181841810}
   m_UseRadianceAmbientProbe: 0
@@ -5904,7 +5904,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &91519511
 Transform:
   m_ObjectHideFlags: 0
@@ -19903,6 +19903,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: f8c4dfd0234dcd1479f34df46631187e, type: 3}
   m_PrefabInstance: {fileID: 310264260}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &310432581
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &311319153
 GameObject:
   m_ObjectHideFlags: 0
@@ -28083,7 +28120,7 @@ Transform:
   m_GameObject: {fileID: 425996487}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -51.48, y: 3.569, z: -51.337}
+  m_LocalPosition: {x: -71.06, y: 3.29, z: -43.65}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -28124,18 +28161,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -37223,7 +37260,7 @@ Transform:
   m_GameObject: {fileID: 557136375}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -12.673, y: 5.118, z: 14.691}
+  m_LocalPosition: {x: -105, y: 3.31, z: -19.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -37264,18 +37301,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -55425,7 +55462,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Go to the bloody krus inside the old church
+  m_text: Reach the village gate
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
   m_sharedMaterial: {fileID: -7870439289142360562, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
@@ -59546,18 +59583,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -71285,43 +71322,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1027642517}
   m_Mesh: {fileID: -6138107458088212743, guid: 8966fb63389882243b39c4c457fadad4, type: 3}
---- !u!84 &1027719229
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &1029109793
 GameObject:
   m_ObjectHideFlags: 0
@@ -76388,21 +76388,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab7cb86da01e46b9b0eb23f27225909c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Level2GameFlow
+  escapeMode: 1
+  spawnAmbushHorde: 1
   objectiveText: {fileID: 0}
   goalText: {fileID: 0}
   beatObjectiveOnStart: 1
-  objectiveIntroDuration: 4
+  objectiveIntroDuration: 6.5
+  objectiveFadeOutDuration: 1.75
+  escapeObjectiveTitle: Reach the boat at the shore
+  escapeObjectiveInstructions: "The village is overrun \u2014 you don't need to kill them all.\nSneak when you can. Running and jumping make noise.\nUse garlic and the candle to survive. Cut through to the boat."
   beatGoalInPhaseB: 1
   beatSpeed: 6.5
   beatScaleAmount: 0.2
   beatAlphaMin: 0.35
-  churchBellClip: {fileID: 0}
+  churchBellClip: {fileID: 8300000, guid: d66c4cb893be06f46980d641154f032d, type: 3}
   churchBellVolume: 0.85
-  perfectScore: 200
+  perfectScore: 275
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: SplashScreen
-  exitTriggerSize: {x: 3, y: 3, z: 3}
+  exitTriggerSize: {x: 16, y: 8, z: 16}
+  exitProximityRadius: 14
+  showExitMarkerVisually: 0
+  snapExitAnchorToBoat: 1
+  finishWhenStandingInBoat: 1
+  boatBoundsPadding: 2.5
   killScore: {fileID: 0}
   lives: {fileID: 0}
   runStats: {fileID: 0}
@@ -84352,7 +84362,7 @@ Transform:
   m_GameObject: {fileID: 1221849190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: 78}
+  m_LocalPosition: {x: -73.84, y: 3.5, z: 33.53}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -89116,18 +89126,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -92766,18 +92776,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -94398,7 +94408,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1375351781
 Transform:
   m_ObjectHideFlags: 0
@@ -95175,7 +95185,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1383909570
 Transform:
   m_ObjectHideFlags: 0
@@ -106139,6 +106149,43 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 243994930}
   m_SourcePrefab: {fileID: 100100000, guid: 21d73da8e6fe0ab4f944b3154402edfd, type: 3}
+--- !u!84 &1540321366
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1001 &1540446076
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -117180,18 +117227,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -117543,7 +117590,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -69.7}
-  m_SizeDelta: {x: 720, y: 56}
+  m_SizeDelta: {x: 1100, y: 220}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &1648236065
 MonoBehaviour:
@@ -117565,7 +117612,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Kill all aswang!!!!
+  m_text: Reach the boat at the shore
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
   m_sharedMaterial: {fileID: -7870439289142360562, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
@@ -117592,8 +117639,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 63.6
-  m_fontSizeBase: 63.6
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -127783,18 +127830,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -129677,7 +129724,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33a8ae82a7df0f84ba6b06bfe2de2e60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+  m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonController
   useRootMotion: 0
   walkSpeed: 2.5
   runSpeed: 5
@@ -132547,7 +132594,7 @@ Transform:
   m_GameObject: {fileID: 1882307474}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: -0, y: 0.16, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -146191,43 +146238,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 215a971f0f2e59047bf9b5991ec49964, type: 3}
---- !u!84 &2104466151
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &2106240973
 PrefabInstance:
   m_ObjectHideFlags: 0

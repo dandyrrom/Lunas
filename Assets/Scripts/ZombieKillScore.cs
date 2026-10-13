@@ -10,7 +10,14 @@ public class ZombieKillScore : MonoBehaviour
 
     void Start()
     {
-        Total = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None).Length;
+        // Only count aswangs that are active in the scene (disabled ones stay for later).
+        Total = 0;
+        foreach (ZombieHealth z in FindObjectsByType<ZombieHealth>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (z != null && z.gameObject.activeInHierarchy)
+                Total++;
+        }
+
         Killed = 0;
         OnScoreChanged?.Invoke(Killed, Total);
     }
