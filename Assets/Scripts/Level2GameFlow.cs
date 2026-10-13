@@ -46,7 +46,11 @@ public class Level2GameFlow : MonoBehaviour
     public string continueSceneName = "SplashScreen";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(3f, 3f, 3f);
+    public Vector3 exitTriggerSize = new Vector3(8f, 4f, 8f);
+    [Tooltip("Also finish if she stands this close to the exit anchor during Phase B.")]
+    public float exitProximityRadius = 4f;
+    [Tooltip("Show a translucent green cube at the exit so you can find it while testing.")]
+    public bool showExitMarkerVisually = true;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;

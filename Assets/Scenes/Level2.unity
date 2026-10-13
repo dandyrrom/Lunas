@@ -76402,7 +76402,9 @@ MonoBehaviour:
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: SplashScreen
-  exitTriggerSize: {x: 3, y: 3, z: 3}
+  exitTriggerSize: {x: 8, y: 4, z: 8}
+  exitProximityRadius: 4
+  showExitMarkerVisually: 1
   killScore: {fileID: 0}
   lives: {fileID: 0}
   runStats: {fileID: 0}
