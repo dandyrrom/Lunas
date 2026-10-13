@@ -35576,7 +35576,7 @@ MonoBehaviour:
   perfectScore: 200
   missedThrowPenalty: 10
   lifeLostPenalty: 25
-  continueSceneName: SplashScreen
+  continueSceneName: Level2
   krusTriggerSize: {x: 2.5, y: 3, z: 2.5}
   killScore: {fileID: 769359838}
   lives: {fileID: 1675826768}
