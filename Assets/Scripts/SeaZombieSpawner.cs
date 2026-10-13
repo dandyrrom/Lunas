@@ -24,8 +24,13 @@ public class SeaZombieSpawner : MonoBehaviour
     [Tooltip("Spawning stops after this many zombie deaths. Anyone still alive catches fire.")]
     public int killsToStop = 20;
     public GameObject clearFireVfx;
+    [Tooltip("Launches after the burn, the lightning, the blackout, and the wait below.")]
+    public AnglerfishAttack anglerfish;
+    [Tooltip("Seconds after the lightning has faded into the blackout before the first anglerfish leaves.")]
+    public float secondsAfterBlackout = 3f;
 
     int kills;
+    int burnsRemaining;
     bool cleared;
 
     void OnEnable()
@@ -36,6 +41,7 @@ public class SeaZombieSpawner : MonoBehaviour
     void OnDisable()
     {
         ZombieHealth.OnDied -= HandleZombieDied;
+        ZombieHealth.OnDied -= HandleBurnedZombieDied;
     }
 
     void Start()
@@ -58,17 +64,56 @@ public class SeaZombieSpawner : MonoBehaviour
         cleared = true;
         StopAllCoroutines();
 
+        ZombieHealth.OnDied += HandleBurnedZombieDied;
+
         ZombieHealth[] zombies = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None);
         foreach (ZombieHealth zombie in zombies)
         {
             if (zombie == null || zombie.IsDead)
                 continue;
 
+            burnsRemaining++;
             zombie.KillByCandleFire(clearFireVfx);
         }
 
-        Thunderstorm storm = FindFirstObjectByType<Thunderstorm>();
-        storm?.BeginBlackout();
+        StartCoroutine(AfterTheBurn());
+    }
+
+    void HandleBurnedZombieDied()
+    {
+        if (burnsRemaining <= 0)
+            return;
+
+        burnsRemaining--;
+    }
+
+    IEnumerator AfterTheBurn()
+    {
+        float waited = 0f;
+        while (burnsRemaining > 0 && waited < 12f)
+        {
+            waited += Time.deltaTime;
+            yield return null;
+        }
+
+        ZombieHealth.OnDied -= HandleBurnedZombieDied;
+        burnsRemaining = 0;
+
+        Thunderstorm storm = FindAnyObjectByType<Thunderstorm>();
+        bool blackoutDone = storm == null;
+        if (storm != null)
+            storm.PlayStrikeThenBlackout(() => blackoutDone = true);
+
+        while (!blackoutDone)
+            yield return null;
+
+        if (secondsAfterBlackout > 0f)
+            yield return new WaitForSeconds(secondsAfterBlackout);
+
+        if (anglerfish == null)
+            anglerfish = FindAnyObjectByType<AnglerfishAttack>();
+
+        anglerfish?.Launch(firstInterval, intervalStep, minimumInterval);
     }
 
     IEnumerator SpawnLoop()

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -52,6 +53,7 @@ public class Thunderstorm : MonoBehaviour
     LightmapData[] savedLightmaps;
     bool hasSkyExposure;
     bool blackoutActive;
+    bool openingPlayed;
     bool bakedLightingOn = true;
 
     float level = 1f;
@@ -119,6 +121,52 @@ public class Thunderstorm : MonoBehaviour
         level = darkLevel;
         Apply(level);
         ScheduleNextFlash();
+    }
+
+    /// <summary>
+    /// One lightning flash with thunder, then fade into the blackout.
+    /// onBlackout runs when the scene has finished fading dark.
+    /// </summary>
+    public void PlayStrikeThenBlackout(System.Action onBlackout)
+    {
+        if (openingPlayed)
+        {
+            onBlackout?.Invoke();
+            return;
+        }
+
+        openingPlayed = true;
+        StartCoroutine(OpeningStrike(onBlackout));
+    }
+
+    IEnumerator OpeningStrike(System.Action onBlackout)
+    {
+        DisableAutoExposure();
+        PlayThunder();
+
+        level = flashLevel;
+        Apply(level);
+
+        if (brightHold > 0f)
+            yield return new WaitForSeconds(brightHold);
+
+        float fade = Mathf.Max(0.01f, fadeBack);
+        float elapsed = 0f;
+        while (elapsed < fade)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / fade);
+            level = Mathf.Lerp(flashLevel, darkLevel, t);
+            Apply(level);
+            yield return null;
+        }
+
+        blackoutActive = true;
+        phase = Phase.Waiting;
+        level = darkLevel;
+        Apply(level);
+        ScheduleNextFlash();
+        onBlackout?.Invoke();
     }
 
     void Update()
