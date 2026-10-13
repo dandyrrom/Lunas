@@ -312,7 +312,8 @@ public class Level2GameFlow : MonoBehaviour
         objectiveBaseColor = startColor;
         objectiveText.color = startColor;
 
-        beatingObjective = beatObjectiveOnStart;
+        // Escape instructions stay steady so they're readable; optional pulse in kill-all mode.
+        beatingObjective = beatObjectiveOnStart && !escapeMode;
 
         // In escape mode phaseB is already true (exit open) — still show the intro.
         float hold = Mathf.Max(0f, objectiveIntroDuration);
