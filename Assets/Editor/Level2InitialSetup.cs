@@ -222,7 +222,7 @@ public static class Level2InitialSetup
         if (GameObject.Find("Level2ExitAnchor") == null)
         {
             GameObject exit = new GameObject("Level2ExitAnchor");
-            exit.transform.position = new Vector3(0f, 1.5f, 78f);
+            exit.transform.position = new Vector3(-37f, 6f, 48f);
         }
     }
 
@@ -244,7 +244,7 @@ public static class Level2InitialSetup
         }
 
         EnsureHudText(hud.transform, "ObjectiveText", "Kill all aswang!!!!", new Vector2(0f, 220f), new Color(1f, 0.25f, 0.28f));
-        EnsureHudText(hud.transform, "GoalText", "Reach the swamp exit", new Vector2(0f, 220f), new Color(1f, 0.85f, 0.35f));
+        EnsureHudText(hud.transform, "GoalText", "Reach the village gate", new Vector2(0f, 220f), new Color(1f, 0.85f, 0.35f));
         GameObject goal = GameObject.Find("GoalText");
         if (goal != null)
             goal.SetActive(false);

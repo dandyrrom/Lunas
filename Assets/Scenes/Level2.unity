@@ -15,17 +15,17 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 10
   m_Fog: 1
-  m_FogColor: {r: 0.14150941, g: 0.13283195, b: 0.13283195, a: 1}
+  m_FogColor: {r: 0.05, g: 0.06, b: 0.12, a: 1}
   m_FogMode: 1
   m_FogDensity: 1
-  m_LinearFogStart: 20
-  m_LinearFogEnd: 180
-  m_AmbientSkyColor: {r: 0.38086888, g: 0.4384824, b: 0.47843137, a: 1}
-  m_AmbientEquatorColor: {r: 0.75735295, g: 0.31741998, b: 0.31741998, a: 1}
-  m_AmbientGroundColor: {r: 0, g: 0.59052944, b: 1, a: 1}
-  m_AmbientIntensity: 0.23
+  m_LinearFogStart: 18
+  m_LinearFogEnd: 140
+  m_AmbientSkyColor: {r: 0.02, g: 0.03, b: 0.08, a: 1}
+  m_AmbientEquatorColor: {r: 0.015, g: 0.018, b: 0.03, a: 1}
+  m_AmbientGroundColor: {r: 0.008, g: 0.008, b: 0.012, a: 1}
+  m_AmbientIntensity: 0.32
   m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.28279638, g: 0.3139952, b: 0.38679248, a: 1}
+  m_SubtractiveShadowColor: {r: 0.05, g: 0.06, b: 0.1, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: 49559053c9d445039976a0a3e5a75d7b, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -35,7 +35,7 @@ RenderSettings:
   m_DefaultReflectionMode: 0
   m_DefaultReflectionResolution: 128
   m_ReflectionBounces: 5
-  m_ReflectionIntensity: 1
+  m_ReflectionIntensity: 0.4
   m_CustomReflection: {fileID: 8900000, guid: 545abe2b789631d42ba478c66371d77c, type: 2}
   m_Sun: {fileID: 181841810}
   m_UseRadianceAmbientProbe: 0
@@ -5904,7 +5904,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &91519511
 Transform:
   m_ObjectHideFlags: 0
@@ -28124,18 +28124,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -37264,18 +37264,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -55425,7 +55425,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Go to the bloody krus inside the old church
+  m_text: Reach the village gate
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
   m_sharedMaterial: {fileID: -7870439289142360562, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
@@ -59546,18 +59546,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -76396,9 +76396,9 @@ MonoBehaviour:
   beatSpeed: 6.5
   beatScaleAmount: 0.2
   beatAlphaMin: 0.35
-  churchBellClip: {fileID: 0}
+  churchBellClip: {fileID: 8300000, guid: d66c4cb893be06f46980d641154f032d, type: 3}
   churchBellVolume: 0.85
-  perfectScore: 200
+  perfectScore: 275
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: SplashScreen
@@ -84352,7 +84352,7 @@ Transform:
   m_GameObject: {fileID: 1221849190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: 78}
+  m_LocalPosition: {x: -37, y: 6, z: 48}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -89116,18 +89116,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -92766,18 +92766,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -94398,7 +94398,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1375351781
 Transform:
   m_ObjectHideFlags: 0
@@ -95175,7 +95175,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1383909570
 Transform:
   m_ObjectHideFlags: 0
@@ -117180,18 +117180,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -127783,18 +127783,18 @@ MonoBehaviour:
   roamRadius: 20
   minIdleTime: 2
   maxIdleTime: 5
-  chaseSpeed: 0.5
+  chaseSpeed: 0.65
   investigateTime: 3
   attackDuration: 1.8
-  breathingRange: 1
+  breathingRange: 1.25
   attackRange: 0.8
   attackReachPadding: 0.8
-  attackDamage: 10
+  attackDamage: 12
   attackHitNormalized: 0.45
   screamHoldDuration: 0.777
   candleFireScreamHoldDuration: 2.3
-  hitRunSpeed: 0.5
-  screamAlertRadius: 20
+  hitRunSpeed: 0.7
+  screamAlertRadius: 28
   player: {fileID: 0}
   attackClip: {fileID: 8300000, guid: cb12626551c0ac347ba925522ec905c0, type: 3}
   runClip: {fileID: 8300000, guid: d360a9584fb1d5e4e853838c435f2c12, type: 3}
@@ -129677,7 +129677,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 33a8ae82a7df0f84ba6b06bfe2de2e60, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+  m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonController
   useRootMotion: 0
   walkSpeed: 2.5
   runSpeed: 5
