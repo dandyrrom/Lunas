@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ZombieKillScore : MonoBehaviour
 {
-    [Tooltip("If greater than 0, the counter shows kills out of this number. Zero keeps Level 1's count of zombies in the scene.")]
+    [Tooltip("Used when this scene has no Sea Zombie Spawner. Zero counts the zombies already in the scene. A Sea Zombie Spawner overrides this with Kills To Stop.")]
     public int goal;
 
     public int Killed { get; private set; }
@@ -13,9 +13,14 @@ public class ZombieKillScore : MonoBehaviour
 
     void Start()
     {
-        Total = goal > 0
-            ? goal
-            : FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None).Length;
+        SeaZombieSpawner spawner = FindAnyObjectByType<SeaZombieSpawner>();
+        if (spawner != null && spawner.killsToStop > 0)
+            Total = spawner.killsToStop;
+        else
+            Total = goal > 0
+                ? goal
+                : FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None).Length;
+
         Killed = 0;
         OnScoreChanged?.Invoke(Killed, Total);
     }
