@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using TMPro;
+using Unity.AI.Navigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -49,6 +50,37 @@ public static class Level2InitialSetup
         EnsureGameFlow();
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log("Level2: flow, HUD, and anchors ready.");
+    }
+
+    [MenuItem("LUNAS/Level 2/Create NavMesh Surface (Safe)")]
+    public static void CreateNavMeshSurfaceSafe()
+    {
+        Scene scene = EnsureLevel2Open();
+        if (!scene.IsValid())
+            return;
+
+        NavMeshSurface existing = Object.FindFirstObjectByType<NavMeshSurface>();
+        GameObject go;
+        NavMeshSurface surface;
+
+        if (existing != null)
+        {
+            go = existing.gameObject;
+            surface = existing;
+        }
+        else
+        {
+            go = new GameObject("NavMesh");
+            SceneManager.MoveGameObjectToScene(go, scene);
+            surface = go.AddComponent<NavMeshSurface>();
+            Undo.RegisterCreatedObjectUndo(go, "Create Level2 NavMesh");
+        }
+
+        surface.collectObjects = CollectObjects.All;
+        surface.BuildNavMesh();
+        EditorSceneManager.MarkSceneDirty(scene);
+        Selection.activeGameObject = go;
+        Debug.Log("Level2: NavMesh Surface ready and baked. Save the scene.");
     }
 
     [MenuItem("LUNAS/Level 2/Import Gameplay Roots From Level1")]
