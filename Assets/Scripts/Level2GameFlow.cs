@@ -86,10 +86,15 @@ public class Level2GameFlow : MonoBehaviour
 
     public bool IsPhaseB => phaseB;
     public bool IsPanelOpen => panelOpen;
+    /// <summary>Exit is usable in escape mode from the start, or after kill-all Phase B.</summary>
+    public bool IsExitOpen => escapeMode || phaseB;
 
     void Awake()
     {
         Instance = this;
+
+        if (spawnAmbushHorde)
+            EnsureAmbushHorde();
 
         if (killScore == null)
             killScore = FindFirstObjectByType<ZombieKillScore>();
@@ -128,6 +133,14 @@ public class Level2GameFlow : MonoBehaviour
         bellSource.volume = churchBellVolume;
     }
 
+    void EnsureAmbushHorde()
+    {
+        Level2AmbushSpawner spawner = GetComponent<Level2AmbushSpawner>();
+        if (spawner == null)
+            spawner = gameObject.AddComponent<Level2AmbushSpawner>();
+        spawner.SpawnHorde();
+    }
+
     void OnDestroy()
     {
         if (Instance == this)
@@ -156,8 +169,22 @@ public class Level2GameFlow : MonoBehaviour
         SetupExitMarker();
         ShowPhaseATexts();
         CacheObjectiveVisuals();
-        if (exitMarker != null)
+
+        if (escapeMode)
+        {
+            // Escape gauntlet: exit is live immediately. Kills are optional pressure/score.
+            if (exitMarker != null)
+                exitMarker.SetActive(true);
+            phaseB = true;
+            beatingGoal = beatGoalInPhaseB;
+            CacheGoalVisuals();
+            if (goalText != null)
+                SetTextActive(goalText, false);
+        }
+        else if (exitMarker != null)
+        {
             exitMarker.SetActive(false);
+        }
 
         if (objectiveIntroRoutine != null)
             StopCoroutine(objectiveIntroRoutine);
@@ -182,7 +209,7 @@ public class Level2GameFlow : MonoBehaviour
 
     void TryFinishByProximity()
     {
-        if (!phaseB || panelOpen)
+        if (!IsExitOpen || panelOpen)
             return;
 
         Transform anchor = exitAnchor != null
@@ -201,7 +228,7 @@ public class Level2GameFlow : MonoBehaviour
 
     void HandleScoreChanged(int killed, int total)
     {
-        if (phaseB || panelOpen)
+        if (escapeMode || phaseB || panelOpen)
             return;
 
         if (total <= 0 || killed < total)
@@ -308,7 +335,7 @@ public class Level2GameFlow : MonoBehaviour
 
     public void NotifyExitReached()
     {
-        if (!phaseB || panelOpen)
+        if (!IsExitOpen || panelOpen)
             return;
 
         ShowEndPanel(victory: true);
