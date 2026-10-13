@@ -76406,7 +76406,7 @@ MonoBehaviour:
   continueSceneName: SplashScreen
   exitTriggerSize: {x: 8, y: 4, z: 8}
   exitProximityRadius: 4
-  showExitMarkerVisually: 1
+  showExitMarkerVisually: 0
   killScore: {fileID: 0}
   lives: {fileID: 0}
   runStats: {fileID: 0}

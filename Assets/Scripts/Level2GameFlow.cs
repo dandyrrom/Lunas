@@ -55,8 +55,8 @@ public class Level2GameFlow : MonoBehaviour
     public Vector3 exitTriggerSize = new Vector3(8f, 4f, 8f);
     [Tooltip("Also finish if she stands this close to the exit anchor during Phase B.")]
     public float exitProximityRadius = 4f;
-    [Tooltip("Show a translucent green cube at the exit so you can find it while testing.")]
-    public bool showExitMarkerVisually = true;
+    [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
+    public bool showExitMarkerVisually = false;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
