@@ -378,27 +378,32 @@ public class Level2GameFlow : MonoBehaviour
             : 0;
 
         if (endTitleText != null)
-            endTitleText.text = victory ? "Level 2 Complete" : "Game Over";
+            endTitleText.text = victory ? "She reaches the boat" : "Taken by the night";
 
         if (endBodyText != null)
         {
             if (victory)
             {
                 endBodyText.text =
-                    $"Aswang killed: {killed}\n" +
+                    "Through the stolen village, she finds the shore.\n" +
+                    "The old boat waits — beyond the black water,\n" +
+                    "the sea port… and him.\n\n" +
+                    $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
-                    $"Remaining lives: {livesLeft}\n" +
-                    $"Total score: {totalScore}\n\n" +
-                    "Press SPACE to continue";
+                    $"Lives left: {livesLeft}\n" +
+                    $"Score: {totalScore}\n\n" +
+                    "Press SPACE — sail to the old sea port";
             }
             else
             {
                 endBodyText.text =
-                    $"Aswang killed: {killed}\n" +
+                    "The aswangs close in before she can reach the shore.\n" +
+                    "The boat drifts empty in the dark.\n\n" +
+                    $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
-                    $"Remaining lives: {livesLeft}\n" +
-                    $"Total score: {totalScore}\n\n" +
-                    "Press SPACE to continue";
+                    $"Lives left: {livesLeft}\n" +
+                    $"Score: {totalScore}\n\n" +
+                    "Press SPACE to try again";
             }
         }
 
