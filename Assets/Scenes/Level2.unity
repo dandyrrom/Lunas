@@ -127,6 +127,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1934167453}
     m_Modifications:
+    - target: {fileID: 192062, guid: 5f29f207d858fd245b7befaa18ea3284, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 100002, guid: b6286938954000e4bad9aeb93ef3ca30, type: 3}
       propertyPath: m_IsActive
       value: 1
@@ -388,6 +392,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1805738252}
     m_Modifications:
+    - target: {fileID: 192062, guid: 5f29f207d858fd245b7befaa18ea3284, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 100002, guid: 04e0ab4312f682f439b88c86a65672e0, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 4294967293
@@ -38446,7 +38454,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &506865534
 Transform:
   m_ObjectHideFlags: 0
