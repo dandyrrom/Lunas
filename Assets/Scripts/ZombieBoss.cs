@@ -23,12 +23,14 @@ public class ZombieBoss : MonoBehaviour
     public float barHeight = 4.92f;
 
     [Header("Relocate")]
-    [Tooltip("Seconds between each jump to a new spot around where he first appeared.")]
+    [Tooltip("Seconds between each jump to a new spot on the pier.")]
     public float relocateEvery = 7f;
-    [Tooltip("How far from that first spot he is allowed to appear, in meters.")]
+    [Tooltip("How far from where he first appeared he may jump, in meters. Spots over the water are skipped.")]
     public float relocateRadius = 12f;
     [Tooltip("He will not pick a spot closer than this to where he is standing.")]
     public float minMoveDistance = 5f;
+    [Tooltip("A landing counts as the pier when the ground under it is this close to his starting height.")]
+    public float pierHeightSlack = 0.8f;
 
     [Header("Defeat")]
     public AudioClip hitClip;
@@ -151,7 +153,6 @@ public class ZombieBoss : MonoBehaviour
 
         StartCoroutine(PlayDeathAfterHit());
         FindAnyObjectByType<Thunderstorm>()?.ClearAfter(clearDelay);
-        Level3GameFlow.Instance?.NotifyBossDefeated();
     }
 
     IEnumerator PlayDeathAfterHit()
@@ -165,11 +166,15 @@ public class ZombieBoss : MonoBehaviour
         yield return new WaitForSeconds(wait);
 
         if (deathClip == null)
+        {
+            Level3GameFlow.Instance?.NotifyBossDefeated();
             yield break;
+        }
 
         Play(deathClip);
         yield return new WaitForSeconds(Mathf.Max(0.1f, deathClip.length));
         HoldLastFrame();
+        Level3GameFlow.Instance?.NotifyBossDefeated();
     }
 
     void HoldLastFrame()
@@ -184,18 +189,71 @@ public class ZombieBoss : MonoBehaviour
     Vector3 PickSpot()
     {
         Vector3 current = transform.position;
-        for (int i = 0; i < 8; i++)
+        float radius = Mathf.Max(minMoveDistance, relocateRadius);
+        for (int i = 0; i < 24; i++)
         {
-            Vector2 circle = Random.insideUnitCircle * Mathf.Max(minMoveDistance, relocateRadius);
+            Vector2 circle = Random.insideUnitCircle * radius;
             if (circle.magnitude < minMoveDistance)
                 circle = circle.normalized * minMoveDistance;
+            if (circle.magnitude > relocateRadius)
+                continue;
 
             Vector3 candidate = new Vector3(home.x + circle.x, home.y, home.z + circle.y);
-            if (Vector3.Distance(candidate, current) >= minMoveDistance)
-                return candidate;
+            if (Vector3.Distance(candidate, current) < minMoveDistance)
+                continue;
+            if (!HasPierUnder(candidate))
+                continue;
+
+            return candidate;
         }
 
-        return home;
+        return current;
+    }
+
+    bool HasPierUnder(Vector3 spot)
+    {
+        Vector3[] feet =
+        {
+            Vector3.zero,
+            new Vector3(0.7f, 0f, 0f),
+            new Vector3(-0.7f, 0f, 0f),
+            new Vector3(0f, 0f, 0.7f),
+            new Vector3(0f, 0f, -0.7f)
+        };
+
+        for (int i = 0; i < feet.Length; i++)
+        {
+            if (!PierAt(spot + feet[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    bool PierAt(Vector3 spot)
+    {
+        Vector3 origin = new Vector3(spot.x, home.y + 4f, spot.z);
+        RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider col = hits[i].collider;
+            if (col == null || col.transform.IsChildOf(transform))
+                continue;
+            if (Mathf.Abs(hits[i].point.y - home.y) > pierHeightSlack)
+                continue;
+            if (IsWater(col.gameObject.name))
+                continue;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool IsWater(string objectName)
+    {
+        string name = objectName.ToLowerInvariant();
+        return name.Contains("ocean") || name.Contains("water") || name.Contains("boat");
     }
 
     void EnsureCollider()

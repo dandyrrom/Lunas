@@ -26,6 +26,11 @@ public class EndingCutscene : MonoBehaviour
     [Tooltip("Seconds for the boat to reach the shore marker.")]
     public float approachSeconds = 16f;
 
+    [Header("Song")]
+    [Tooltip("Plays over the ending until SPACE.")]
+    public AudioClip endingSong;
+    [Range(0f, 1f)] public float endingSongVolume = 0.75f;
+
     [Header("Groom")]
     public AnimationClip wavingClip;
     public AudioClip[] shouts;
@@ -42,6 +47,7 @@ public class EndingCutscene : MonoBehaviour
     PlayableGraph graph;
     AnimationClipPlayable wavePlayable;
     AudioSource shoutSource;
+    AudioSource songSource;
     TMP_Text promptText;
     Vector3 boatStart;
     bool arrived;
@@ -57,6 +63,7 @@ public class EndingCutscene : MonoBehaviour
             MakeMorning();
 
         CacheApproach();
+        PlayEndingSong();
         PlayWaving();
         StartCoroutine(ShoutLoop());
         BuildScoreboard();
@@ -73,6 +80,8 @@ public class EndingCutscene : MonoBehaviour
             return;
 
         leaving = true;
+        if (songSource != null)
+            songSource.Stop();
         LevelChain.TryLoad(LevelChain.Splash);
     }
 
@@ -171,6 +180,31 @@ public class EndingCutscene : MonoBehaviour
         boat.position = end;
         if (promptText != null)
             promptText.text = "Press SPACE to return to the menu";
+    }
+
+    void PlayEndingSong()
+    {
+        EnsureEndingSong();
+        if (endingSong == null)
+            return;
+
+        songSource = gameObject.AddComponent<AudioSource>();
+        songSource.playOnAwake = false;
+        songSource.loop = true;
+        songSource.spatialBlend = 0f;
+        songSource.volume = endingSongVolume;
+        songSource.clip = endingSong;
+        songSource.Play();
+    }
+
+    void EnsureEndingSong()
+    {
+#if UNITY_EDITOR
+        if (endingSong != null)
+            return;
+
+        endingSong = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/ending sound.wav");
+#endif
     }
 
     void PlayWaving()

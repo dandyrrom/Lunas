@@ -6,23 +6,25 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Level 3 (old sea port): defeat the boss to finish. Game over reloads this scene.
-/// SPACE on the clear panel loads the ending shore.
+/// Level 3 (old sea port): defeat the boss to finish.
+/// SPACE on a clear loads the ending shore. SPACE on game over returns to the splash menu.
 /// </summary>
 public class Level3GameFlow : MonoBehaviour
 {
     public static Level3GameFlow Instance { get; private set; }
 
     [Header("Continue")]
-    [Tooltip("Loaded after SPACE on a boss clear. Game over reloads this scene.")]
+    [Tooltip("Loaded after SPACE on a boss clear.")]
     public string continueSceneName = LevelChain.Ending;
+    [Tooltip("Loaded after SPACE on game over. She starts the story again from the menu.")]
+    public string gameOverSceneName = LevelChain.Splash;
 
     [Header("Score")]
     public int perfectScore = 250;
     public int missedThrowPenalty = 10;
     public int lifeLostPenalty = 25;
 
-    [Tooltip("Seconds after the boss falls before the clear panel, so the death can play.")]
+    [Tooltip("Seconds to wait after the boss death animation finishes, before the clear panel.")]
     public float victoryDelay = 3.5f;
 
     public bool IsPanelOpen => panelOpen;
@@ -152,7 +154,7 @@ public class Level3GameFlow : MonoBehaviour
         {
             endBodyText.text = victory
                 ? "Morning finds the shore. A boat is coming in.\n\nPress SPACE"
-                : "The sea takes her before the hunt is finished.\n\nPress SPACE to try again";
+                : "The sea takes her before the hunt is finished.\n\nPress SPACE to return to the menu";
         }
 
         if (endPanel != null)
@@ -175,8 +177,8 @@ public class Level3GameFlow : MonoBehaviour
         }
 
         string sceneName = endedInVictory
-            ? (string.IsNullOrWhiteSpace(continueSceneName) ? LevelChain.Splash : continueSceneName.Trim())
-            : SceneManager.GetActiveScene().name;
+            ? (string.IsNullOrWhiteSpace(continueSceneName) ? LevelChain.Ending : continueSceneName.Trim())
+            : (string.IsNullOrWhiteSpace(gameOverSceneName) ? LevelChain.Splash : gameOverSceneName.Trim());
 
         if (!LevelChain.TryLoad(sceneName))
             waitingForSpace = true;

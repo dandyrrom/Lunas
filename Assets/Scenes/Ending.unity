@@ -12358,6 +12358,8 @@ MonoBehaviour:
   shotCamera: {fileID: 923615588}
   sun: {fileID: 1610145832}
   approachSeconds: 16
+  endingSong: {fileID: 8300000, guid: 05a91b0ad7f556942b545dc7fc277ff2, type: 3}
+  endingSongVolume: 0.75
   wavingClip: {fileID: 7400000, guid: 56723806efd1f5047908ae3245bfbb54, type: 3}
   shouts:
   - {fileID: 8300000, guid: 2143feb60e5750d4ca80c9b9ae33d09d, type: 3}
