@@ -73,7 +73,7 @@ public class Level2GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Scene loaded after SPACE on a victory panel (boat reached).")]
-    public string continueSceneName = "Level3";
+    public string continueSceneName = LevelChain.Level3;
     [Tooltip("Scene loaded after SPACE on game over. Empty = reload this Level2.")]
     public string retrySceneName = "";
 
@@ -778,14 +778,11 @@ public class Level2GameFlow : MonoBehaviour
             }
         }
 
-        Time.timeScale = 1f;
-        AudioListener.pause = false;
-
         string sceneName;
         if (lastVictory)
         {
             sceneName = string.IsNullOrWhiteSpace(continueSceneName)
-                ? "Level3"
+                ? LevelChain.Level3
                 : continueSceneName.Trim();
         }
         else
@@ -795,17 +792,8 @@ public class Level2GameFlow : MonoBehaviour
                 : retrySceneName.Trim();
         }
 
-        if (!Application.CanStreamedLevelBeLoaded(sceneName))
-        {
-            Debug.LogError(
-                $"Level2GameFlow: cannot load '{sceneName}'. " +
-                "Add that scene in File → Build Settings (and spell the name exactly).");
+        if (!LevelChain.TryLoad(sceneName))
             waitingForSpace = true;
-            yield break;
-        }
-
-        Debug.Log($"Level2GameFlow: loading scene '{sceneName}'");
-        SceneManager.LoadScene(sceneName);
     }
 
     void FreezeGameplay(bool freeze)
