@@ -29,7 +29,7 @@ public class Level2GameFlow : MonoBehaviour
     [Tooltip("Beat ObjectiveText at level start to announce the objective, then fade it out.")]
     public bool beatObjectiveOnStart = true;
     [Tooltip("How many seconds ObjectiveText stays fully visible before fading.")]
-    public float objectiveIntroDuration = 6.5f;
+    public float objectiveIntroDuration = 8.5f;
     [Tooltip("How many seconds the objective text takes to fade out.")]
     public float objectiveFadeOutDuration = 1.75f;
 
