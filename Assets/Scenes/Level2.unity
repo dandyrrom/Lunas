@@ -76395,8 +76395,13 @@ MonoBehaviour:
   beatObjectiveOnStart: 1
   objectiveIntroDuration: 6.5
   objectiveFadeOutDuration: 1.75
-  escapeObjectiveTitle: Reach the boat at the shore
-  escapeObjectiveInstructions: "The village is overrun \u2014 you don't need to kill them all.\nSneak when you can. Running and jumping make noise.\nUse garlic and the candle to survive. Cut through to the boat."
+  escapeObjectiveTitle: The wedding is gone \u2014 reach the boat
+  escapeObjectiveInstructions: "At the altar he said \u201CI do\u201D\u2026 then the aswang took the night.\nThe church grounds are behind you. This stolen village stands between you and him.\nYou don't need to kill them all \u2014 sneak, use garlic and the candle,\nand reach the shore boat before dawn finds you first."
+  useEscapeTimer: 1
+  escapeTimeLimit: 180
+  timerWarnSeconds: 60
+  timerCriticalSeconds: 30
+  timeBonusPerSecond: 1
   beatGoalInPhaseB: 1
   beatSpeed: 6.5
   beatScaleAmount: 0.2
@@ -76407,6 +76412,7 @@ MonoBehaviour:
   missedThrowPenalty: 10
   lifeLostPenalty: 25
   continueSceneName: Level3
+  retrySceneName: 
   exitTriggerSize: {x: 4, y: 3, z: 6}
   exitProximityRadius: 2
   showExitMarkerVisually: 0
