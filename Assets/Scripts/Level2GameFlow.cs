@@ -427,7 +427,7 @@ public class Level2GameFlow : MonoBehaviour
         int totalSec = Mathf.CeilToInt(shown);
         int mins = totalSec / 60;
         int secs = totalSec % 60;
-        timerText.text = $"Dawn closes in  {mins:0}:{secs:00}";
+        timerText.text = $"Dawn closes in {mins:0}:{secs:00}";
 
         if (shown <= timerCriticalSeconds)
             timerText.color = new Color(1f, 0.35f, 0.35f, 1f);
@@ -724,10 +724,9 @@ public class Level2GameFlow : MonoBehaviour
             if (victory)
             {
                 endBodyText.text =
-                    "The vow broke at the altar — but she did not.\n" +
-                    "Through the aswang village she cuts to the shore.\n" +
-                    "Beyond the black water: the old sea port… and the groom\n" +
-                    "the night still holds.\n\n" +
+                    "\n" +
+                    "\n" +
+                    "\n\n" +
                     $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
                     $"Lives left: {livesLeft}\n" +
@@ -1026,9 +1025,22 @@ public class Level2GameFlow : MonoBehaviour
         timerText.alignment = TextAlignmentOptions.Center;
         timerText.fontStyle = FontStyles.Bold;
         timerText.color = new Color(0.92f, 0.92f, 0.88f, 1f);
-        timerText.text = "Dawn closes in  3:00";
+        timerText.text = "Dawn closes in 3:00";
         timerText.gameObject.SetActive(false);
         timerGo.transform.SetAsLastSibling();
+    }
+
+    public void ResetEscapeTimer()
+    {
+        if (!useEscapeTimer || !escapeMode || panelOpen)
+            return;
+
+        timeRemaining = Mathf.Max(1f, escapeTimeLimit);
+        timerRunning = true;
+        UpdateTimerHud();
+
+        if (timerText != null)
+            timerText.gameObject.SetActive(true);
     }
 
     void BuildEndPanelIfNeeded()

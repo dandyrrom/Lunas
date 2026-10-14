@@ -5731,6 +5731,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: 8ea95cf3416f1584ea8b256eb4f7b5b3, type: 3}
   m_PrefabInstance: {fileID: 90412252}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &91008544
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &91277613
 GameObject:
   m_ObjectHideFlags: 0
@@ -10875,6 +10912,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d287c173fe114674a87a77ad4eb35df6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieKillScore
+  goal: 0
 --- !u!4 &186713248
 Transform:
   m_ObjectHideFlags: 0
@@ -19903,43 +19941,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: f8c4dfd0234dcd1479f34df46631187e, type: 3}
   m_PrefabInstance: {fileID: 310264260}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &310432581
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &311319153
 GameObject:
   m_ObjectHideFlags: 0
@@ -31494,6 +31495,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4632754132067490, guid: d64f762022b554040b62239f44929a54, type: 3}
   m_PrefabInstance: {fileID: 1474705491}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &483271502
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &483343490
 GameObject:
   m_ObjectHideFlags: 0
@@ -76388,15 +76426,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab7cb86da01e46b9b0eb23f27225909c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Level2GameFlow
-  escapeMode: 1
-  spawnAmbushHorde: 1
   objectiveText: {fileID: 0}
   goalText: {fileID: 0}
+  escapeMode: 1
+  spawnAmbushHorde: 1
   beatObjectiveOnStart: 1
   objectiveIntroDuration: 6.5
   objectiveFadeOutDuration: 1.75
-  escapeObjectiveTitle: The wedding is gone \u2014 reach the boat
-  escapeObjectiveInstructions: "At the altar he said \u201CI do\u201D\u2026 then the aswang took the night.\nThe church grounds are behind you. This stolen village stands between you and him.\nYou don't need to kill them all \u2014 sneak, use garlic and the candle,\nand reach the shore boat before dawn finds you first."
+  escapeObjectiveTitle: Escape the village
+  escapeObjectiveInstructions: "This village is overrun by aswangs.\nReach the boat
+    before dawn \u2014 then sail."
   useEscapeTimer: 1
   escapeTimeLimit: 180
   timerWarnSeconds: 60
@@ -84368,7 +84407,7 @@ Transform:
   m_GameObject: {fileID: 1221849190}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -73.84, y: 3.5, z: 33.53}
+  m_LocalPosition: {x: -56.843, y: 2.031, z: 60.589}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -106155,43 +106194,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 243994930}
   m_SourcePrefab: {fileID: 100100000, guid: 21d73da8e6fe0ab4f944b3154402edfd, type: 3}
---- !u!84 &1540321366
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1540446076
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -117618,7 +117620,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Reach the boat at the shore
+  m_text: 'Escape the village '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
   m_sharedMaterial: {fileID: -7870439289142360562, guid: 284b263fc028fc949aaf7e424f7dec85, type: 2}
@@ -129757,6 +129759,9 @@ MonoBehaviour:
   debugHitDamage: 5
   hitClip: {fileID: 8300000, guid: d67c246bb92faa541964b2149e9fe68a, type: 3}
   hurtNoiseRadius: 12
+  climbSpeed: 1.35
+  climbFrontReach: 0.85
+  climbStepHalfWidth: 0.4
 --- !u!114 &1837099269
 MonoBehaviour:
   m_ObjectHideFlags: 0
