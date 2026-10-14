@@ -29,18 +29,31 @@ public class Level2GameFlow : MonoBehaviour
     [Tooltip("Beat ObjectiveText at level start to announce the objective, then fade it out.")]
     public bool beatObjectiveOnStart = true;
     [Tooltip("How many seconds ObjectiveText stays fully visible before fading.")]
-    public float objectiveIntroDuration = 6.5f;
+    public float objectiveIntroDuration = 8.5f;
     [Tooltip("How many seconds the objective text takes to fade out.")]
     public float objectiveFadeOutDuration = 1.75f;
 
     [Header("Escape narration (written into ObjectiveText at start)")]
     [TextArea(2, 5)]
-    public string escapeObjectiveTitle = "Reach the boat at the shore";
-    [TextArea(3, 8)]
+    public string escapeObjectiveTitle = "The wedding is gone — reach the boat";
+    [TextArea(3, 10)]
     public string escapeObjectiveInstructions =
-        "The village is overrun — you don't need to kill them all.\n" +
-        "Sneak when you can. Running and jumping make noise.\n" +
-        "Use garlic and the candle to survive. Cut through to the boat.";
+        "At the altar he said “I do”… then the aswang took the night.\n" +
+        "The church grounds are behind you. This stolen village stands between you and him.\n" +
+        "You don't need to kill them all — sneak, use garlic and the candle,\n" +
+        "and reach the shore boat before dawn finds you first.";
+
+    [Header("Escape timer")]
+    [Tooltip("Countdown pressure to reach the shore boat. Off = no time limit.")]
+    public bool useEscapeTimer = true;
+    [Tooltip("Seconds to reach the boat before the night closes in.")]
+    public float escapeTimeLimit = 180f;
+    [Tooltip("Timer text turns warning color at/under this many seconds.")]
+    public float timerWarnSeconds = 60f;
+    [Tooltip("Timer text turns critical color at/under this many seconds.")]
+    public float timerCriticalSeconds = 30f;
+    [Tooltip("Bonus score points per whole second left when she reaches the boat.")]
+    public int timeBonusPerSecond = 1;
 
     [Header("Goal beat (GoalText / Phase B)")]
     public bool beatGoalInPhaseB = true;
@@ -59,21 +72,24 @@ public class Level2GameFlow : MonoBehaviour
     public int lifeLostPenalty = 25;
 
     [Header("Continue")]
-    [Tooltip("Scene loaded after SPACE on the end / game-over panel.")]
-    public string continueSceneName = "SplashScreen";
+    [Tooltip("Scene loaded after SPACE on a victory panel (boat reached).")]
+    public string continueSceneName = "Level3";
+    [Tooltip("Scene loaded after SPACE on game over. Empty = reload this Level2.")]
+    public string retrySceneName = "";
 
     [Header("Exit Marker")]
-    public Vector3 exitTriggerSize = new Vector3(16f, 8f, 16f);
-    [Tooltip("Finish if she stands this close to the exit anchor / boat.")]
-    public float exitProximityRadius = 14f;
+    [Tooltip("Fallback trigger size; overridden to fit the shore boat at start.")]
+    public Vector3 exitTriggerSize = new Vector3(4f, 3f, 6f);
+    [Tooltip("Unused for finish now — kept for inspector compatibility. Finish is boat-hull only.")]
+    public float exitProximityRadius = 2f;
     [Tooltip("Debug only: show a green cube at the exit. Keep off for the real look.")]
     public bool showExitMarkerVisually = false;
     [Tooltip("At start, move Level2ExitAnchor onto the nearest boat mesh.")]
     public bool snapExitAnchorToBoat = true;
-    [Tooltip("Also finish when she stands inside/near any object named like a boat.")]
+    [Tooltip("Finish only when she stands inside the preferred shore boat hull.")]
     public bool finishWhenStandingInBoat = true;
-    [Tooltip("Extra padding around boat mesh bounds when testing if she is standing in it.")]
-    public float boatBoundsPadding = 2.5f;
+    [Tooltip("Tiny padding around the shore boat mesh (keep small so nearby paths don't finish).")]
+    public float boatBoundsPadding = 0.35f;
 
     [Header("Optional refs (auto-found if empty)")]
     public ZombieKillScore killScore;
@@ -86,14 +102,18 @@ public class Level2GameFlow : MonoBehaviour
     TMP_Text endTitleText;
     TMP_Text endBodyText;
     Image endDimmer;
+    TMP_Text timerText;
 
     AudioSource bellSource;
     GameObject exitMarker;
     bool phaseB;
     bool panelOpen;
     bool waitingForSpace;
+    bool lastVictory;
     bool beatingObjective;
     bool beatingGoal;
+    bool timerRunning;
+    float timeRemaining;
     Coroutine objectiveIntroRoutine;
     readonly System.Collections.Generic.List<Renderer> boatRenderers = new System.Collections.Generic.List<Renderer>(16);
     Transform preferredBoat;
@@ -185,6 +205,7 @@ public class Level2GameFlow : MonoBehaviour
     void Start()
     {
         BuildEndPanelIfNeeded();
+        BuildTimerHudIfNeeded();
         CacheBoatGoals();
         if (snapExitAnchorToBoat)
             SnapExitAnchorToNearestBoat();
@@ -210,10 +231,20 @@ public class Level2GameFlow : MonoBehaviour
         }
 
         CacheObjectiveVisuals();
+        BeginEscapeTimer();
 
         if (objectiveIntroRoutine != null)
             StopCoroutine(objectiveIntroRoutine);
         objectiveIntroRoutine = StartCoroutine(ObjectiveIntroRoutine());
+    }
+
+    void BeginEscapeTimer()
+    {
+        timerRunning = useEscapeTimer && escapeMode;
+        timeRemaining = Mathf.Max(1f, escapeTimeLimit);
+        UpdateTimerHud();
+        if (timerText != null)
+            timerText.gameObject.SetActive(timerRunning);
     }
 
     void CacheBoatGoals()
@@ -272,15 +303,15 @@ public class Level2GameFlow : MonoBehaviour
         Bounds b = GetBoatBounds(preferredBoat);
         Vector3 p = b.center;
         // Keep the trigger centered on the deck, slightly above the hull floor.
-        p.y = Mathf.Max(b.min.y + 1.5f, b.center.y);
+        p.y = Mathf.Max(b.min.y + 1.25f, b.center.y);
         exitAnchor.position = p;
 
-        // Fit the invisible trigger to this boat so walking onto the ribs always hits it.
-        float pad = Mathf.Max(2f, boatBoundsPadding);
+        // Tight trigger = boat hull only (small pad). Paths beside the boat must not finish.
+        float pad = Mathf.Max(0.2f, boatBoundsPadding);
         exitTriggerSize = new Vector3(
-            Mathf.Max(exitTriggerSize.x, b.size.x + pad * 2f),
-            Mathf.Max(exitTriggerSize.y, b.size.y + pad * 2f),
-            Mathf.Max(exitTriggerSize.z, b.size.z + pad * 2f));
+            Mathf.Clamp(b.size.x + pad * 2f, 2.5f, 8f),
+            Mathf.Clamp(b.size.y + pad * 2f, 2f, 5f),
+            Mathf.Clamp(b.size.z + pad * 2f, 3f, 10f));
 
         Debug.Log($"Level2GameFlow: exit snapped to boat '{preferredBoat.name}' at {exitAnchor.position}, trigger {exitTriggerSize}");
     }
@@ -343,7 +374,7 @@ public class Level2GameFlow : MonoBehaviour
             return;
 
         string title = string.IsNullOrWhiteSpace(escapeObjectiveTitle)
-            ? "Reach the boat at the shore"
+            ? "The wedding is gone — reach the boat"
             : escapeObjectiveTitle.Trim();
         string body = string.IsNullOrWhiteSpace(escapeObjectiveInstructions)
             ? string.Empty
@@ -358,76 +389,103 @@ public class Level2GameFlow : MonoBehaviour
     {
         UpdateObjectiveBeat();
         UpdateGoalBeat();
+        UpdateEscapeTimer();
         TryFinishByProximity();
 
-        if (!waitingForSpace || Keyboard.current == null)
+        if (!waitingForSpace)
             return;
 
-        if (!Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (!WasContinuePressed())
             return;
 
         waitingForSpace = false;
         StartCoroutine(ContinueRoutine());
     }
 
+    void UpdateEscapeTimer()
+    {
+        if (!timerRunning || panelOpen)
+            return;
+
+        timeRemaining -= Time.deltaTime;
+        UpdateTimerHud();
+
+        if (timeRemaining > 0f)
+            return;
+
+        timeRemaining = 0f;
+        timerRunning = false;
+        NotifyGameOver();
+    }
+
+    void UpdateTimerHud()
+    {
+        if (timerText == null)
+            return;
+
+        float shown = Mathf.Max(0f, timeRemaining);
+        int totalSec = Mathf.CeilToInt(shown);
+        int mins = totalSec / 60;
+        int secs = totalSec % 60;
+        timerText.text = $"Dawn closes in {mins:0}:{secs:00}";
+
+        if (shown <= timerCriticalSeconds)
+            timerText.color = new Color(1f, 0.35f, 0.35f, 1f);
+        else if (shown <= timerWarnSeconds)
+            timerText.color = new Color(1f, 0.78f, 0.35f, 1f);
+        else
+            timerText.color = new Color(0.92f, 0.92f, 0.88f, 1f);
+    }
+
+    static bool WasContinuePressed()
+    {
+        if (Keyboard.current != null &&
+            (Keyboard.current.spaceKey.wasPressedThisFrame ||
+             Keyboard.current.enterKey.wasPressedThisFrame))
+            return true;
+
+        // Fallback when the Input System keyboard device is missing / Game view unfocused briefly.
+        return UnityEngine.Input.GetKeyDown(KeyCode.Space) ||
+               UnityEngine.Input.GetKeyDown(KeyCode.Return);
+    }
+
     void TryFinishByProximity()
     {
-        if (!IsExitOpen || panelOpen)
+        if (!IsExitOpen || panelOpen || !finishWhenStandingInBoat)
             return;
 
         if (!TryGetPlayerPosition(out Vector3 playerPos))
             return;
 
-        Transform anchor = exitAnchor != null
-            ? exitAnchor
-            : (exitMarker != null ? exitMarker.transform : null);
-        if (anchor != null)
-        {
-            Vector3 flatPlayer = playerPos;
-            Vector3 flatAnchor = anchor.position;
-            flatPlayer.y = 0f;
-            flatAnchor.y = 0f;
-            if (Vector3.Distance(flatPlayer, flatAnchor) <= exitProximityRadius &&
-                Mathf.Abs(playerPos.y - anchor.position.y) <= 6f)
-            {
-                NotifyExitReached();
-                return;
-            }
-        }
-
-        if (!finishWhenStandingInBoat)
+        if (preferredBoat == null)
+            preferredBoat = FindPreferredBoat();
+        if (preferredBoat == null)
             return;
 
-        if (boatRenderers.Count == 0)
-            CacheBoatGoals();
+        // Strict: only the shore goal boat hull. Nearby paths / other boats do not finish.
+        Bounds b = GetBoatBounds(preferredBoat);
+        b.Expand(Mathf.Max(0.05f, boatBoundsPadding) * 2f);
 
-        // Standing in/on the wooden hull itself finishes — use mesh bounds, not just the pivot.
-        for (int i = 0; i < boatRenderers.Count; i++)
+        Vector3 chest = playerPos + Vector3.up * 1.0f;
+        if (b.Contains(playerPos) || b.Contains(chest))
         {
-            Renderer r = boatRenderers[i];
-            if (r == null)
-                continue;
+            NotifyExitReached();
+            return;
+        }
 
-            Bounds b = r.bounds;
-            b.Expand(boatBoundsPadding * 2f);
-            if (b.Contains(playerPos) || b.Contains(playerPos + Vector3.up * 1.2f))
-            {
-                NotifyExitReached();
-                return;
-            }
-
-            Vector3 flatPlayer = playerPos;
-            Vector3 flatCenter = b.center;
-            flatPlayer.y = 0f;
-            flatCenter.y = 0f;
-            float planarRadius = 0.5f * Mathf.Max(b.size.x, b.size.z) + boatBoundsPadding;
-            if (Vector3.Distance(flatPlayer, flatCenter) <= planarRadius &&
-                playerPos.y >= b.min.y - 1f &&
-                playerPos.y <= b.max.y + 3f)
-            {
-                NotifyExitReached();
-                return;
-            }
+        // Slight planar forgiveness still clamped to this boat's footprint (not a village-wide radius).
+        Vector3 flatPlayer = playerPos;
+        Vector3 flatCenter = b.center;
+        flatPlayer.y = 0f;
+        flatCenter.y = 0f;
+        float halfX = b.extents.x;
+        float halfZ = b.extents.z;
+        if (Mathf.Abs(flatPlayer.x - flatCenter.x) <= halfX &&
+            Mathf.Abs(flatPlayer.z - flatCenter.z) <= halfZ &&
+            playerPos.y >= b.min.y - 0.5f &&
+            playerPos.y <= b.max.y + 2f)
+        {
+            NotifyExitReached();
         }
     }
 
@@ -622,13 +680,17 @@ public class Level2GameFlow : MonoBehaviour
     void ShowEndPanel(bool victory)
     {
         panelOpen = true;
+        lastVictory = victory;
         waitingForSpace = true;
         beatingGoal = false;
+        timerRunning = false;
         StopObjectiveIntro();
         StopChurchBell();
         RestoreGoalVisuals();
         SetTextActive(objectiveText, false);
         SetTextActive(goalText, false);
+        if (timerText != null)
+            timerText.gameObject.SetActive(false);
 
         PlayModeBackgroundMusic bgm = FindFirstObjectByType<PlayModeBackgroundMusic>();
         if (bgm != null)
@@ -647,28 +709,42 @@ public class Level2GameFlow : MonoBehaviour
                 perfectScore, missedThrowPenalty, lifeLostPenalty)
             : 0;
 
+        int timeBonus = 0;
+        if (victory && useEscapeTimer)
+        {
+            timeBonus = Mathf.Max(0, Mathf.FloorToInt(timeRemaining)) * Mathf.Max(0, timeBonusPerSecond);
+            totalScore += timeBonus;
+        }
+
         if (endTitleText != null)
-            endTitleText.text = victory ? "She reaches the boat" : "Taken by the night";
+            endTitleText.text = victory ? "She reaches the boat" : "Dawn takes the village";
 
         if (endBodyText != null)
         {
             if (victory)
             {
                 endBodyText.text =
-                    "Through the stolen village, she finds the shore.\n" +
-                    "The old boat waits — beyond the black water,\n" +
-                    "the sea port… and him.\n\n" +
+                    "\n" +
+                    "\n" +
+                    "\n\n" +
                     $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
                     $"Lives left: {livesLeft}\n" +
+                    (useEscapeTimer ? $"Time left: {FormatTime(timeRemaining)}\n" : "") +
+                    (timeBonus > 0 ? $"Time bonus: +{timeBonus}\n" : "") +
                     $"Score: {totalScore}\n\n" +
                     "Press SPACE — sail to the old sea port";
             }
             else
             {
+                bool timedOut = useEscapeTimer && timeRemaining <= 0.05f;
                 endBodyText.text =
-                    "The aswangs close in before she can reach the shore.\n" +
-                    "The boat drifts empty in the dark.\n\n" +
+                    (timedOut
+                        ? "Dawn breaks over the stolen streets — too late.\n" +
+                          "The boat waits empty while the aswang keep what they took.\n"
+                        : "The aswangs close in before she can reach the shore.\n" +
+                          "The boat drifts empty in the dark.\n") +
+                    "\n" +
                     $"Aswangs faced down: {killed}\n" +
                     $"Missed throws: {misses}\n" +
                     $"Lives left: {livesLeft}\n" +
@@ -679,6 +755,12 @@ public class Level2GameFlow : MonoBehaviour
 
         if (endPanel != null)
             endPanel.SetActive(true);
+    }
+
+    static string FormatTime(float seconds)
+    {
+        int totalSec = Mathf.Max(0, Mathf.CeilToInt(seconds));
+        return $"{totalSec / 60:0}:{totalSec % 60:00}";
     }
 
     IEnumerator ContinueRoutine()
@@ -699,10 +781,31 @@ public class Level2GameFlow : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
-        if (!string.IsNullOrWhiteSpace(continueSceneName))
-            SceneManager.LoadScene(continueSceneName);
+        string sceneName;
+        if (lastVictory)
+        {
+            sceneName = string.IsNullOrWhiteSpace(continueSceneName)
+                ? "Level3"
+                : continueSceneName.Trim();
+        }
         else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        {
+            sceneName = string.IsNullOrWhiteSpace(retrySceneName)
+                ? SceneManager.GetActiveScene().name
+                : retrySceneName.Trim();
+        }
+
+        if (!Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            Debug.LogError(
+                $"Level2GameFlow: cannot load '{sceneName}'. " +
+                "Add that scene in File → Build Settings (and spell the name exactly).");
+            waitingForSpace = true;
+            yield break;
+        }
+
+        Debug.Log($"Level2GameFlow: loading scene '{sceneName}'");
+        SceneManager.LoadScene(sceneName);
     }
 
     void FreezeGameplay(bool freeze)
@@ -863,7 +966,7 @@ public class Level2GameFlow : MonoBehaviour
         trigger.flow = this;
     }
 
-    void BuildEndPanelIfNeeded()
+    void EnsureHudCanvas()
     {
         if (hudCanvas == null)
         {
@@ -872,30 +975,81 @@ public class Level2GameFlow : MonoBehaviour
                 hudCanvas = hud.GetComponent<Canvas>();
         }
 
-        // Always show the victory / game-over panel even if the HUD canvas is missing.
-        if (hudCanvas == null)
-        {
-            GameObject canvasGo = new GameObject(
-                "Level2EndCanvas",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster));
-            hudCanvas = canvasGo.GetComponent<Canvas>();
-            hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            hudCanvas.sortingOrder = 500;
-            CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-        }
+        if (hudCanvas != null)
+            return;
 
-        TMP_FontAsset font = null;
+        GameObject canvasGo = new GameObject(
+            "Level2EndCanvas",
+            typeof(RectTransform),
+            typeof(Canvas),
+            typeof(CanvasScaler),
+            typeof(GraphicRaycaster));
+        hudCanvas = canvasGo.GetComponent<Canvas>();
+        hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        hudCanvas.sortingOrder = 500;
+        CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1920f, 1080f);
+    }
+
+    TMP_FontAsset ResolveHudFont()
+    {
         if (objectiveText != null && objectiveText.font != null)
-            font = objectiveText.font;
-        else if (goalText != null && goalText.font != null)
-            font = goalText.font;
-        else
-            font = TMP_Settings.defaultFontAsset;
+            return objectiveText.font;
+        if (goalText != null && goalText.font != null)
+            return goalText.font;
+        return TMP_Settings.defaultFontAsset;
+    }
+
+    void BuildTimerHudIfNeeded()
+    {
+        if (timerText != null)
+            return;
+
+        EnsureHudCanvas();
+        if (hudCanvas == null)
+            return;
+
+        GameObject timerGo = new GameObject("Level2EscapeTimer", typeof(RectTransform), typeof(TextMeshProUGUI));
+        timerGo.transform.SetParent(hudCanvas.transform, false);
+        RectTransform rt = timerGo.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -18f);
+        rt.sizeDelta = new Vector2(520f, 40f);
+
+        timerText = timerGo.GetComponent<TextMeshProUGUI>();
+        timerText.font = ResolveHudFont();
+        timerText.fontSize = 26;
+        timerText.alignment = TextAlignmentOptions.Center;
+        timerText.fontStyle = FontStyles.Bold;
+        timerText.color = new Color(0.92f, 0.92f, 0.88f, 1f);
+        timerText.text = "Dawn closes in 3:00";
+        timerText.gameObject.SetActive(false);
+        timerGo.transform.SetAsLastSibling();
+    }
+
+    public void ResetEscapeTimer()
+    {
+        if (!useEscapeTimer || !escapeMode || panelOpen)
+            return;
+
+        timeRemaining = Mathf.Max(1f, escapeTimeLimit);
+        timerRunning = true;
+        UpdateTimerHud();
+
+        if (timerText != null)
+            timerText.gameObject.SetActive(true);
+    }
+
+    void BuildEndPanelIfNeeded()
+    {
+        EnsureHudCanvas();
+        if (hudCanvas == null)
+            return;
+
+        TMP_FontAsset font = ResolveHudFont();
 
         endPanel = new GameObject("Level2EndPanel", typeof(RectTransform), typeof(Image));
         endPanel.transform.SetParent(hudCanvas.transform, false);
@@ -914,8 +1068,8 @@ public class Level2GameFlow : MonoBehaviour
         titleRt.anchorMin = new Vector2(0.5f, 0.5f);
         titleRt.anchorMax = new Vector2(0.5f, 0.5f);
         titleRt.pivot = new Vector2(0.5f, 0.5f);
-        titleRt.anchoredPosition = new Vector2(0f, 90f);
-        titleRt.sizeDelta = new Vector2(600f, 50f);
+        titleRt.anchoredPosition = new Vector2(0f, 110f);
+        titleRt.sizeDelta = new Vector2(700f, 50f);
         endTitleText = titleGo.GetComponent<TextMeshProUGUI>();
         endTitleText.font = font;
         endTitleText.fontSize = 32;
@@ -929,14 +1083,14 @@ public class Level2GameFlow : MonoBehaviour
         bodyRt.anchorMin = new Vector2(0.5f, 0.5f);
         bodyRt.anchorMax = new Vector2(0.5f, 0.5f);
         bodyRt.pivot = new Vector2(0.5f, 0.5f);
-        bodyRt.anchoredPosition = new Vector2(0f, -20f);
-        bodyRt.sizeDelta = new Vector2(520f, 220f);
+        bodyRt.anchoredPosition = new Vector2(0f, -30f);
+        bodyRt.sizeDelta = new Vector2(620f, 280f);
         endBodyText = bodyGo.GetComponent<TextMeshProUGUI>();
         endBodyText.font = font;
-        endBodyText.fontSize = 20;
+        endBodyText.fontSize = 18;
         endBodyText.alignment = TextAlignmentOptions.Center;
         endBodyText.color = Color.white;
-        endBodyText.lineSpacing = 8f;
+        endBodyText.lineSpacing = 6f;
 
         endPanel.SetActive(false);
         endPanel.transform.SetAsLastSibling();

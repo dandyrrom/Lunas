@@ -17,6 +17,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/lvl2 trial.unity
     guid: 1adb0ac10e89ecf448e8882544e86eb5
+  - enabled: 1
+    path: Assets/Scenes/Level2.unity
+    guid: 2f7df4d0dfeda2e44afff14dbb38e393
+  - enabled: 1
+    path: Assets/Scenes/Level3.unity
+    guid: 718f3c532723c754db0febec6897d12a
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
