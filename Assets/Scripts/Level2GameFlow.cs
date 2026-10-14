@@ -60,7 +60,7 @@ public class Level2GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Scene loaded after SPACE on the end / game-over panel.")]
-    public string continueSceneName = "Level3";
+    public string continueSceneName = LevelChain.Level3;
 
     [Header("Exit Marker")]
     [Tooltip("Fallback trigger size; overridden to fit the shore boat at start.")]
@@ -93,6 +93,7 @@ public class Level2GameFlow : MonoBehaviour
     bool phaseB;
     bool panelOpen;
     bool waitingForSpace;
+    bool endedInVictory;
     bool beatingObjective;
     bool beatingGoal;
     Coroutine objectiveIntroRoutine;
@@ -615,6 +616,7 @@ public class Level2GameFlow : MonoBehaviour
     {
         panelOpen = true;
         waitingForSpace = true;
+        endedInVictory = victory;
         beatingGoal = false;
         StopObjectiveIntro();
         StopChurchBell();
@@ -688,24 +690,12 @@ public class Level2GameFlow : MonoBehaviour
             }
         }
 
-        Time.timeScale = 1f;
-        AudioListener.pause = false;
+        string sceneName = endedInVictory && !string.IsNullOrWhiteSpace(continueSceneName)
+            ? continueSceneName.Trim()
+            : SceneManager.GetActiveScene().name;
 
-        string sceneName = string.IsNullOrWhiteSpace(continueSceneName)
-            ? SceneManager.GetActiveScene().name
-            : continueSceneName.Trim();
-
-        if (!Application.CanStreamedLevelBeLoaded(sceneName))
-        {
-            Debug.LogError(
-                $"Level2GameFlow: cannot load '{sceneName}'. " +
-                "Add that scene in File → Build Settings (and spell the name exactly).");
+        if (!LevelChain.TryLoad(sceneName))
             waitingForSpace = true;
-            yield break;
-        }
-
-        Debug.Log($"Level2GameFlow: loading scene '{sceneName}'");
-        SceneManager.LoadScene(sceneName);
     }
 
     void FreezeGameplay(bool freeze)

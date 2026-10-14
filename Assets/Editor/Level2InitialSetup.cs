@@ -293,7 +293,7 @@ public static class Level2InitialSetup
         if (exit != null)
             flow.exitAnchor = exit.transform;
 
-        flow.continueSceneName = "SplashScreen";
+        flow.continueSceneName = LevelChain.Level3;
         EditorUtility.SetDirty(flow);
     }
 

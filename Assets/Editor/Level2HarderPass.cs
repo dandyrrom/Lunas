@@ -243,7 +243,7 @@ public static class Level2HarderPass
         }
 
         flow.perfectScore = 275;
-        flow.continueSceneName = "SplashScreen";
+        flow.continueSceneName = LevelChain.Level3;
         EditorUtility.SetDirty(flow);
         if (goal != null)
             EditorUtility.SetDirty(goal);

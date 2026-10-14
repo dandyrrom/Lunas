@@ -44,7 +44,7 @@ public class Level1GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Scene loaded after SPACE on the end / game-over panel.")]
-    public string continueSceneName = "Level2";
+    public string continueSceneName = LevelChain.Level2;
 
     [Header("Krus Marker")]
     public Vector3 krusTriggerSize = new Vector3(2.5f, 3f, 2.5f);
@@ -66,6 +66,7 @@ public class Level1GameFlow : MonoBehaviour
     bool phaseB;
     bool panelOpen;
     bool waitingForSpace;
+    bool endedInVictory;
     bool beatingObjective;
     bool beatingGoal;
     Coroutine objectiveIntroRoutine;
@@ -297,6 +298,7 @@ public class Level1GameFlow : MonoBehaviour
     {
         panelOpen = true;
         waitingForSpace = true;
+        endedInVictory = victory;
         beatingGoal = false;
         StopObjectiveIntro();
         StopChurchBell();
@@ -342,7 +344,7 @@ public class Level1GameFlow : MonoBehaviour
                     $"Missed throws: {misses}\n" +
                     $"Remaining lives: {livesLeft}\n" +
                     $"Total score: {totalScore}\n\n" +
-                    "Press SPACE to continue";
+                    "Press SPACE to try again";
             }
         }
 
@@ -365,13 +367,12 @@ public class Level1GameFlow : MonoBehaviour
             }
         }
 
-        Time.timeScale = 1f;
-        AudioListener.pause = false;
+        string sceneName = endedInVictory && !string.IsNullOrWhiteSpace(continueSceneName)
+            ? continueSceneName.Trim()
+            : SceneManager.GetActiveScene().name;
 
-        if (!string.IsNullOrWhiteSpace(continueSceneName))
-            SceneManager.LoadScene(continueSceneName);
-        else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        if (!LevelChain.TryLoad(sceneName))
+            waitingForSpace = true;
     }
 
     void FreezeGameplay(bool freeze)

@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Level 1 only: pause on ESC or when the game window loses focus / cursor leaves.
-/// Reuses the splash menu look with Resume / Restart / Quit (main menu).
+/// Pause on ESC or when the game window loses focus / cursor leaves.
+/// Resume / Restart / Quit. Used on Level 1, Level 2, and the sea-port level.
 /// </summary>
 public class Level1PauseMenu : MonoBehaviour
 {
@@ -169,7 +169,11 @@ public class Level1PauseMenu : MonoBehaviour
             return true;
 
         Level2GameFlow level2 = Level2GameFlow.Instance;
-        return level2 != null && level2.IsPanelOpen;
+        if (level2 != null && level2.IsPanelOpen)
+            return true;
+
+        Level3GameFlow level3 = Level3GameFlow.Instance;
+        return level3 != null && level3.IsPanelOpen;
     }
 
     static bool CursorLeftGameWindow()

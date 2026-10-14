@@ -89,6 +89,16 @@ public class RespawnManager : MonoBehaviour
                 yield break;
             }
 
+            Level3GameFlow level3 = Level3GameFlow.Instance != null
+                ? Level3GameFlow.Instance
+                : FindFirstObjectByType<Level3GameFlow>();
+            if (level3 != null)
+            {
+                level3.NotifyGameOver();
+                handlingDeath = false;
+                yield break;
+            }
+
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             yield break;
         }

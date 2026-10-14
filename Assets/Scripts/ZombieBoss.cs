@@ -151,6 +151,7 @@ public class ZombieBoss : MonoBehaviour
 
         StartCoroutine(PlayDeathAfterHit());
         FindAnyObjectByType<Thunderstorm>()?.ClearAfter(clearDelay);
+        Level3GameFlow.Instance?.NotifyBossDefeated();
     }
 
     IEnumerator PlayDeathAfterHit()
