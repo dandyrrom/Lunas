@@ -641,6 +641,9 @@ public class Level2GameFlow : MonoBehaviour
                 perfectScore, missedThrowPenalty, lifeLostPenalty)
             : 0;
 
+        if (victory)
+            CampaignScore.Record("Level 2", killed, total, misses, livesLeft, totalScore);
+
         if (endTitleText != null)
             endTitleText.text = victory ? "She reaches the boat" : "Taken by the night";
 

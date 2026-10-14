@@ -10875,6 +10875,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d287c173fe114674a87a77ad4eb35df6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ZombieKillScore
+  goal: 0
 --- !u!4 &186713248
 Transform:
   m_ObjectHideFlags: 0
@@ -19903,43 +19904,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400002, guid: f8c4dfd0234dcd1479f34df46631187e, type: 3}
   m_PrefabInstance: {fileID: 310264260}
   m_PrefabAsset: {fileID: 0}
---- !u!84 &310432581
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1 &311319153
 GameObject:
   m_ObjectHideFlags: 0
@@ -75452,6 +75416,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4273629563782826, guid: 26555b26396cb3e4c98a3fe5b98ad384, type: 3}
   m_PrefabInstance: {fileID: 1083612959}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &1083723660
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1084606018
 GameObject:
   m_ObjectHideFlags: 0
@@ -76389,15 +76390,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab7cb86da01e46b9b0eb23f27225909c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Level2GameFlow
-  escapeMode: 1
-  spawnAmbushHorde: 1
   objectiveText: {fileID: 0}
   goalText: {fileID: 0}
+  escapeMode: 1
+  spawnAmbushHorde: 1
   beatObjectiveOnStart: 1
   objectiveIntroDuration: 6.5
   objectiveFadeOutDuration: 1.75
   escapeObjectiveTitle: Reach the boat at the shore
-  escapeObjectiveInstructions: "The village is overrun \u2014 you don't need to kill them all.\nSneak when you can. Running and jumping make noise.\nUse garlic and the candle to survive. Cut through to the boat."
+  escapeObjectiveInstructions: "The village is overrun \u2014 you don't need to kill
+    them all.\nSneak when you can. Running and jumping make noise.\nUse garlic and
+    the candle to survive. Cut through to the boat."
   beatGoalInPhaseB: 1
   beatSpeed: 6.5
   beatScaleAmount: 0.2
@@ -76407,7 +76410,7 @@ MonoBehaviour:
   perfectScore: 275
   missedThrowPenalty: 10
   lifeLostPenalty: 25
-  continueSceneName: "lvl 3 from source"
+  continueSceneName: lvl 3 from source
   exitTriggerSize: {x: 4, y: 3, z: 6}
   exitProximityRadius: 2
   showExitMarkerVisually: 0
@@ -80721,6 +80724,43 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: f2d384aeb0cfba64abc6fb0ac1f1fe2d, type: 3}
   m_PrefabInstance: {fileID: 1175163332}
   m_PrefabAsset: {fileID: 0}
+--- !u!84 &1175570159
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterDepthMap
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 1024
+  m_Height: 1024
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 94
+  m_ColorFormat: 0
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1176257216
 GameObject:
   m_ObjectHideFlags: 0
@@ -106167,43 +106207,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 243994930}
   m_SourcePrefab: {fileID: 100100000, guid: 21d73da8e6fe0ab4f944b3154402edfd, type: 3}
---- !u!84 &1540321366
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: WaterDepthMap
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 1024
-  m_Height: 1024
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 94
-  m_ColorFormat: 0
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!1001 &1540446076
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -129536,7 +129539,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CandleInventory
   maxCount: 1
-  count: 0
+  count: 100
 --- !u!114 &1837099260
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -129769,6 +129772,9 @@ MonoBehaviour:
   debugHitDamage: 5
   hitClip: {fileID: 8300000, guid: d67c246bb92faa541964b2149e9fe68a, type: 3}
   hurtNoiseRadius: 12
+  climbSpeed: 1.35
+  climbFrontReach: 0.85
+  climbStepHalfWidth: 0.4
 --- !u!114 &1837099269
 MonoBehaviour:
   m_ObjectHideFlags: 0

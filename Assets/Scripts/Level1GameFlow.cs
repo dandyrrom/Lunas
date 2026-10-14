@@ -323,6 +323,9 @@ public class Level1GameFlow : MonoBehaviour
                 perfectScore, missedThrowPenalty, lifeLostPenalty)
             : 0;
 
+        if (victory)
+            CampaignScore.Record("Level 1", killed, total, misses, livesLeft, totalScore);
+
         if (endTitleText != null)
             endTitleText.text = victory ? "Level 1 Complete" : "Game Over";
 

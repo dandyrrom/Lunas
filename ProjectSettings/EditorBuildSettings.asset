@@ -24,8 +24,11 @@ EditorBuildSettings:
     path: Assets/Scenes/Level3.unity
     guid: 718f3c532723c754db0febec6897d12a
   - enabled: 1
-    path: "Assets/Scenes/lvl 3 from source.unity"
+    path: Assets/Scenes/lvl 3 from source.unity
     guid: e14c2bb20815dee42ae30aeda1bec7f2
+  - enabled: 1
+    path: Assets/Scenes/Ending.unity
+    guid: f818a73be8607d04098660283950ce3c
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

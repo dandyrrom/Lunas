@@ -173,6 +173,7 @@ public sealed class SplashScreenController : MonoBehaviour
 
         state = ScreenState.Loading;
         stateStartedAt = Time.unscaledTime;
+        CampaignScore.Reset();
         StopMenuMusic();
         yield return new WaitForSecondsRealtime(0.35f);
 

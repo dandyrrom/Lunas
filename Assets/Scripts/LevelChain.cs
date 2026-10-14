@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Play order: SplashScreen → Level1 → Level2 → lvl 3 from source → SplashScreen.
+/// Play order: SplashScreen → Level1 → Level2 → lvl 3 from source → Ending → SplashScreen.
 /// </summary>
 public static class LevelChain
 {
@@ -9,6 +9,7 @@ public static class LevelChain
     public const string Level1 = "Level1";
     public const string Level2 = "Level2";
     public const string Level3 = "lvl 3 from source";
+    public const string Ending = "Ending";
 
     public static string NextAfter(string sceneName)
     {
@@ -19,6 +20,8 @@ public static class LevelChain
         if (sceneName == Level2 || sceneName == "lvl2 trial")
             return Level3;
         if (sceneName == Level3 || sceneName == "Level3")
+            return Ending;
+        if (sceneName == Ending)
             return Splash;
         return null;
     }

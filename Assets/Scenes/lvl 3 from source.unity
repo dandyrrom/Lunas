@@ -44866,7 +44866,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8e1c4d92a7f4c1e9d0a6b5c4e3f2a18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Level3GameFlow
-  continueSceneName: SplashScreen
+  continueSceneName: Ending
   victoryDelay: 3.5
 --- !u!114 &910030004
 MonoBehaviour:

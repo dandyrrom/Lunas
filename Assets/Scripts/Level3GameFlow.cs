@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Level 3 (old sea port): defeat the boss to finish. Game over reloads this scene.
-/// SPACE on the clear panel returns to the splash menu.
+/// SPACE on the clear panel loads the ending shore.
 /// </summary>
 public class Level3GameFlow : MonoBehaviour
 {
@@ -15,7 +15,12 @@ public class Level3GameFlow : MonoBehaviour
 
     [Header("Continue")]
     [Tooltip("Loaded after SPACE on a boss clear. Game over reloads this scene.")]
-    public string continueSceneName = LevelChain.Splash;
+    public string continueSceneName = LevelChain.Ending;
+
+    [Header("Score")]
+    public int perfectScore = 250;
+    public int missedThrowPenalty = 10;
+    public int lifeLostPenalty = 25;
 
     [Tooltip("Seconds after the boss falls before the clear panel, so the death can play.")]
     public float victoryDelay = 3.5f;
@@ -106,13 +111,47 @@ public class Level3GameFlow : MonoBehaviour
 
         FreezeGameplay(true);
 
+        int killed = 0;
+        int total = 0;
+        int misses = 0;
+        int livesLeft = 0;
+        int maxLives = 0;
+        ZombieKillScore killScore = FindFirstObjectByType<ZombieKillScore>();
+        PlayerLives lives = FindFirstObjectByType<PlayerLives>();
+        Level1RunStats runStats = FindFirstObjectByType<Level1RunStats>();
+        if (killScore != null)
+        {
+            killed = killScore.Killed;
+            total = killScore.Total;
+        }
+
+        if (lives != null)
+        {
+            livesLeft = lives.CurrentLives;
+            maxLives = lives.MaxLives;
+        }
+
+        if (runStats != null)
+            misses = runStats.MissedThrows;
+
+        int totalScore = runStats != null
+            ? runStats.ComputeTotalScore(
+                killed, total, livesLeft, maxLives,
+                perfectScore, missedThrowPenalty, lifeLostPenalty)
+            : Mathf.Max(0, Mathf.RoundToInt(perfectScore * (total > 0 ? (float)killed / total : 1f))
+                - misses * missedThrowPenalty
+                - Mathf.Max(0, maxLives - livesLeft) * lifeLostPenalty);
+
+        if (victory)
+            CampaignScore.Record("Level 3", killed, total, misses, livesLeft, totalScore);
+
         if (endTitleText != null)
             endTitleText.text = victory ? "The port falls quiet" : "Taken by the night";
 
         if (endBodyText != null)
         {
             endBodyText.text = victory
-                ? "He is gone. The black water keeps the rest.\n\nPress SPACE to return to the menu"
+                ? "Morning finds the shore. A boat is coming in.\n\nPress SPACE"
                 : "The sea takes her before the hunt is finished.\n\nPress SPACE to try again";
         }
 
